@@ -1,0 +1,8 @@
+#jupyterbook
+.ipynb_checkpoints
+
+
+# experiment dir
+experiment/
+
+__pycache__/
