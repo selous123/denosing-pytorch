@@ -70,13 +70,16 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
 
 2.training psnr via epochs
 
+<p align="center">
 ![](show/frvd_test/training_psnr.png)
-<p align="center">Figure 3. Validation PSNR via epochs during training processing.</p>
+
+Figure 3. Validation PSNR via epochs during training processing.</p>
 
 3.testing psnr via frame
 
+<p align="center">
 ![](show/frvd_test/psnr_frame.png)
-<p align="center">Figure 4. testing PSNR via frame index.</p>
+Figure 4. testing PSNR via frame index.</p>
 
 Temporal inconsistencies have occured on ToFlow Denoising testing dataset. This is an urgent problem to be solved.
 
