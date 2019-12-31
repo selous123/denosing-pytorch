@@ -105,10 +105,11 @@ class checkpoint():
         trainer.optimizer.save(self.dir)
         torch.save(self.log, self.get_path('psnr_log.pt'))
 
-    #def show_test(self):
+    def show_test(self):
         #1. save log result
         # self.log with shape [frames, idx_data]
-
+        torch.save(self.log, self.get_path('psnr_log.pt'))
+        self.plot_psnr(self.args.n_frames, name = 'idx_frame')
         #2. plot PSNR according to frames
 
     def add_log(self, log):
@@ -137,7 +138,7 @@ class checkpoint():
                 label = 'PSNR'
             )
             plt.legend()
-            plt.xlabel('Epochs')
+            plt.xlabel(name)
             plt.ylabel('PSNR')
             plt.grid(True)
             if name is None:
@@ -257,15 +258,36 @@ def make_optimizer(args, target):
 
 import cv2
 import numpy as np
-from PIL import Image
+
+
 def vis_opticalflow(flow):
-    hsv = np.zeros([flow.shape[0],flow.shape[0],3], dtype=np.uint8)
-    hsv[..., 2] = 255
-    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-    hsv[..., 0] = ang * 180 / np.pi / 2
-    hsv[..., 1] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
-    bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    Image.fromarray(bgr).save('of.png')
-    #cv2.imshow("colored flow", bgr)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    bgrs = torch.ones([0, flow.shape[2],flow.shape[3],3], dtype=torch.uint8)
+    for img_idx in range(len(flow)):
+        flow = flow[img_idx].detach().cpu().numpy().transpose([1,2,0])
+        hsv = np.zeros([flow.shape[0],flow.shape[1],3], dtype=np.uint8)
+        hsv[..., 2] = 255
+        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+        hsv[..., 0] = ang * 180 / np.pi / 2
+        hsv[..., 1] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        #print(hsv.shape)
+        bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        #print(bgrs.shape)
+        #print(torch.tensor(bgr).unsqueeze(0).shape)
+        bgrs = torch.cat((bgrs, torch.tensor(bgr).unsqueeze(0)), dim = 0)
+    return bgrs.permute(0,3,1,2)
+
+## https://github.com/ClementPinard/FlowNetPytorch/blob/03c17be89ee0f613d3ac8d6f37d02830034a424e/util.py#L35
+## have not been invoked.
+def flow2rgb(flow_map, max_value):
+    flow_map_np = flow_map.detach().cpu().numpy()
+    _, h, w = flow_map_np.shape
+    flow_map_np[:,(flow_map_np[0] == 0) & (flow_map_np[1] == 0)] = float('nan')
+    rgb_map = np.ones((3,h,w)).astype(np.float32)
+    if max_value is not None:
+        normalized_flow_map = flow_map_np / max_value
+    else:
+        normalized_flow_map = flow_map_np / (np.abs(flow_map_np).max())
+    rgb_map[0] += normalized_flow_map[0]
+    rgb_map[1] -= 0.5*(normalized_flow_map[0] + normalized_flow_map[1])
+    rgb_map[2] += normalized_flow_map[1]
+    return rgb_map.clip(0,1)

@@ -56,10 +56,10 @@ class Tester():
 
                     fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
 
-                    #flow = self.model.model.get_opticalflow_map()[-1]
+                    flow = self.model.model.get_opticalflow_map()[-1]
                     #flow = flow[0].detach().cpu().numpy().transpose([1,2,0])
                     #print(flow.shape)
-                    #utility.vis_opticalflow(flow)
+                    save_list['flow'] = utility.vis_opticalflow(flow)
 
                     #break;
                     ## transfrt save_list to save_dict, with filename and images.
@@ -106,10 +106,11 @@ class Tester():
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
         )
 
-        np.save("test_psnr.npy", self.ckp.log.detach().cpu().numpy())
-        self.ckp.plot_psnr(self.args.n_frames, name = 'test_frame')
+        #np.save(os.path.join(os.path.save, "test_psnr.npy"), self.ckp.log.detach().cpu().numpy())
         ## 1. save PSNR results.
         ## 2. draw the PSNR plot according to frames.
+        self.ckp.show_test()
+
     def prepare(self, *args):
         device = torch.device('cpu' if self.args.cpu else 'cuda')
         def _prepare(tensor):

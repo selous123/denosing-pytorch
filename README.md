@@ -50,11 +50,33 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
 ```
 
 ## 3. Result Presentation
-Training is onging, wait to be add...
+1.denoising results & optical flow results
+
+![](show/frvd_test/00001_0266_frame0_Noise.png)
+![](show/frvd_test/00001_0266_frame0_Target.png)
+![](show/frvd_test/00001_0266_frame0_flow.png)
+![](show/frvd_test/00001_0266_frame0_Est.png)
+
+![](show/frvd_test/00001_0266_frame1_Noise.png)
+![](show/frvd_test/00001_0266_frame1_Target.png)
+![](show/frvd_test/00001_0266_frame1_flow.png)
+![](show/frvd_test/00001_0266_frame1_Est.png)
+
+2.training psnr via epochs
+
+![](show/frvd_test/training_psnr.png)
+
+3.testing psnr via frame
+
+![](show/frvd_test/psnr_frame.png)
 
 
-## 4. Licence
+## 4 To do list...
+1. Use more realistic noised images
+2. analyze the reasons for not satisfying the time continuity, as shown in Section 3.1
+
+## 5. Licence
 This project is licensed under the GNU General Public License v3.0. The terms and conditions can be found in the LICENSE files.
 
-## 5. Contribution
+## 6. Contribution
 Tao Zhang (lrhselous@nuaa.edu.cn)
