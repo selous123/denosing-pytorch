@@ -133,6 +133,7 @@ class Trainer():
 
                 self.model.init_hidden()
                 #save_list = []
+                save_list = {}
                 for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
                     ## fakeTarget for t'th denoised frame
                     ## fakeNoise for (t-1)'th noised frame alignmented
@@ -142,12 +143,14 @@ class Trainer():
 
                 fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
 
-                save_list = [fakeTarget]
+                save_list['Est'] = fakeTarget
                 self.ckp.log[-1, idx_data] += utility.calc_psnr(
                     fakeTarget, tseq, self.args.rgb_range, dataset=d
                 )
                 if self.args.save_gt:
-                    save_list.extend([nseq, tseq])
+                    save_list['Noise'] = nseq
+                    save_list['Target'] = tseq
+                    #save_list.extend([nseq, tseq])
 
                 if self.args.save_results:
                     self.ckp.save_results(d, filename[0], save_list)

@@ -105,6 +105,12 @@ class checkpoint():
         trainer.optimizer.save(self.dir)
         torch.save(self.log, self.get_path('psnr_log.pt'))
 
+    #def show_test(self):
+        #1. save log result
+        # self.log with shape [frames, idx_data]
+
+        #2. plot PSNR according to frames
+
     def add_log(self, log):
         self.log = torch.cat([self.log, log])
 
@@ -118,7 +124,7 @@ class checkpoint():
     def done(self):
         self.log_file.close()
 
-    def plot_psnr(self, epoch):
+    def plot_psnr(self, epoch, name = None):
         axis = np.linspace(1, epoch, epoch)
         for idx_data, d in enumerate(self.args.data_test):
             label = 'denoised on {}'.format(d)
@@ -134,7 +140,10 @@ class checkpoint():
             plt.xlabel('Epochs')
             plt.ylabel('PSNR')
             plt.grid(True)
-            plt.savefig(self.get_path('test_{}.pdf'.format(d)))
+            if name is None:
+                plt.savefig(self.get_path('test_{}.pdf'.format(d)))
+            else:
+                plt.savefig(self.get_path(name+'_{}.pdf'.format(d)))
             plt.close(fig)
 
     def begin_background(self):
@@ -159,15 +168,23 @@ class checkpoint():
         while not self.queue.empty(): time.sleep(1)
         for p in self.process: p.join()
 
-    def save_results(self, dataset, filename, save_list):
+    def save_results(self, dataset, filename, save_list, idx_frame = None):
         if self.args.save_results:
-            filename = self.get_path(
-                'results-{}'.format(dataset.dataset.name),
-                '{}_{}_'.format(*filename.split('/'))
-            )
+            if idx_frame is None:
+                filename = self.get_path(
+                    'results-{}'.format(dataset.dataset.name),
+                    '{}_{}_'.format(*filename.split('/'))
+                )
+            else:
+                assert type(idx_frame) is int
+                filename = self.get_path(
+                    'results-{}'.format(dataset.dataset.name),
+                    '{}_{}_{}_'.format(*filename.split('/'), 'frame'+str(idx_frame))
+                )
 
-            postfix = ('Est', 'Noise', 'Target')
-            for v, p in zip(save_list, postfix):
+            #postfix = ('Est', 'Noise', 'Target')
+            #for v, p in zip(save_list, postfix):
+            for p,v in save_list.items():
                 normalized = v[0].mul(255 / self.args.rgb_range)
                 tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
                 self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
@@ -237,3 +254,18 @@ def make_optimizer(args, target):
     optimizer = CustomOptimizer(trainable, **kwargs_optimizer)
     optimizer._register_scheduler(scheduler_class, **kwargs_scheduler)
     return optimizer
+
+import cv2
+import numpy as np
+from PIL import Image
+def vis_opticalflow(flow):
+    hsv = np.zeros([flow.shape[0],flow.shape[0],3], dtype=np.uint8)
+    hsv[..., 2] = 255
+    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+    hsv[..., 0] = ang * 180 / np.pi / 2
+    hsv[..., 1] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+    bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    Image.fromarray(bgr).save('of.png')
+    #cv2.imshow("colored flow", bgr)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()

@@ -6,6 +6,7 @@ import model
 import loss
 from option import args
 from trainer import Trainer
+from tester import Tester
 
 torch.manual_seed(args.seed)
 checkpoint = utility.checkpoint(args)
@@ -22,9 +23,13 @@ def main():
         else:
             _loss = None
         #exit(0)
-        t = Trainer(args, loader, _model, _loss, checkpoint)
-        while not t.terminate():
-            t.train()
+        if not args.test_only:
+            t = Trainer(args, loader, _model, _loss, checkpoint)
+            while not t.terminate():
+                t.train()
+                t.test()
+        else:
+            t = Tester(args, loader, _model, checkpoint)
             t.test()
 
         checkpoint.done()
