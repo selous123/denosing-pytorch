@@ -1,0 +1,9 @@
+##For Training:
+```
+python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results
+```
+
+## For Testing:
+```
+python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results --save "frvd-test" --test_only --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvd-v0.1/model/model_best.pt --data_range 1-810/811-850
+```
