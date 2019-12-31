@@ -152,18 +152,22 @@ class FRVD(nn.Module):
         else:
             ## keep the shape of testing data. We should specific the width and
             ## height through parameters
+            self.batch_size = args.test_batch_size
+
             if args.test_patch_size == -1:
                 if height is None or width is None:
                     raise ValueError('Test patch size should be setting in parameters before model defined')
             else:
                 width = args.test_patch_size
                 height = args.test_patch_size
-                self.batch_size = args.test_batch_size
+
+
         self.lastNoiseImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
         #print("shape is :", self.lastNoiseImg.shape)
         self.EstTargetImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
         height_gap = 2 / (height - 1)
         width_gap = 2 / (width - 1)
+        #print("::::::", height, width, height_gap, width_gap)
         height, width = torch.meshgrid([torch.range(-1, 1, height_gap), torch.range(-1, 1, width_gap)])
         self.identity = torch.stack([width, height]).to(self.device)
 
@@ -180,7 +184,7 @@ class FRVD(nn.Module):
         # print(self.lastNoiseImg.shape)
         preflow = torch.cat((input, self.lastNoiseImg), dim=1)
         flow = self.fnet(preflow)
-        
+
         self.ofmaps.append(flow)
         #print("arch of fnet:", self.fnet)
         #print("f shape:", flow.shape)

@@ -210,10 +210,13 @@ class DeData(data.Dataset):
             if not self.args.no_augment:
                 patch_tseqs, patch_nseqs = common.augment([patch_tseqs, patch_nseqs])
         else:
-            patch_tseqs, patch_nseqs = common.get_center_patch(
-                            frame_tseqs, frame_nseqs,
-                            patch_size = self.args.test_patch_size
-                            )
+            if self.args.test_patch_size != -1:
+                patch_tseqs, patch_nseqs = common.get_center_patch(
+                                frame_tseqs, frame_nseqs,
+                                patch_size = self.args.test_patch_size
+                                )
+            else:
+                patch_tseqs, patch_nseqs = frame_tseqs, frame_nseqs
 
         return patch_tseqs, patch_nseqs
 

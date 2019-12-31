@@ -45,8 +45,9 @@ class Tester():
             for nseqs, tseqs, pathname in tqdm(d, ncols=80):
                 filename = [fname[-10:] for fname in pathname]
                 nseqs, tseqs = self.prepare(nseqs, tseqs)
-
-                self.model.model.init_hidden()
+                
+                h, w = nseqs.shape[3:]
+                self.model.model.init_hidden(h, w)
                 save_list = {}
                 for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
                     ## fakeTarget for t'th denoised frame
