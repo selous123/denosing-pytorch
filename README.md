@@ -40,7 +40,7 @@ Otherwise, you should reimplement your own dataset in this dir.
 In futher, we will try to support standard datasets.
 ### 2.2 Loss Function
 
-In /code/loss directory, EDSR officical code has implemented a lot of widely-used loss functions. 
+In /code/loss directory, EDSR officical code has implemented a lot of widely-used loss functions.
 
 We have adopted mse loss for training now.
 
@@ -52,31 +52,31 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
 ## 3. Result Presentation
 1.denoising results & optical flow results
 
-<center class="third">
+<p align="center">
     <img src="show/frvd_test/00001_0266_frame0_Noise.png" Title = "Noise" width="200">
     <img src="show/frvd_test/00001_0266_frame0_Target.png" title = "Target" width="200">
     <img src="show/frvd_test/00001_0266_frame0_flow.png" title = "Flow" width="200">
     <img src="show/frvd_test/00001_0266_frame0_Est.png" title = "Denoise" width="200">
-</center>
-<center>Figure 1. Denoising result on Frame 0, [Noise, Target, Flow, Denoise]</center>
+</p>
+<p align="center">Figure 1. Denoising result on Frame 0, [Noise, Target, Flow, Denoise]</p>
 
-<center class="third">
+<p align="center">
     <img src="show/frvd_test/00001_0266_frame1_Noise.png" width="200">
     <img src="show/frvd_test/00001_0266_frame1_Target.png" width="200">
     <img src="show/frvd_test/00001_0266_frame1_flow.png" width="200">
     <img src="show/frvd_test/00001_0266_frame1_Est.png" width="200">
-</center>
-<center>Figure 2. Denoising result on Frame 1, [Noise, Target, Flow, Denoise]</center>
+</p>
+<p align="center">Figure 2. Denoising result on Frame 1, [Noise, Target, Flow, Denoise]</p>
 
 2.training psnr via epochs
 
 ![](show/frvd_test/training_psnr.png)
-<center>Figure 3. Validation PSNR via epochs during training processing.</center>
+<p align="center">Figure 3. Validation PSNR via epochs during training processing.</p>
 
 3.testing psnr via frame
 
 ![](show/frvd_test/psnr_frame.png)
-<center>Figure 4. testing PSNR via frame index.</center>
+<p align="center">Figure 4. testing PSNR via frame index.</p>
 
 Temporal inconsistencies have occured on ToFlow Denoising testing dataset. This is an urgent problem to be solved.
 
