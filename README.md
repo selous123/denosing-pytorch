@@ -52,23 +52,34 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
 ## 3. Result Presentation
 1.denoising results & optical flow results
 
-![](show/frvd_test/00001_0266_frame0_Noise.png)
-![](show/frvd_test/00001_0266_frame0_Target.png)
-![](show/frvd_test/00001_0266_frame0_flow.png)
-![](show/frvd_test/00001_0266_frame0_Est.png)
+<center class="third">
+    <img src="show/frvd_test/00001_0266_frame0_Noise.png" Title = "Noise" width="200">
+    <img src="show/frvd_test/00001_0266_frame0_Target.png" title = "Target" width="200">
+    <img src="show/frvd_test/00001_0266_frame0_flow.png" title = "Flow" width="200">
+    <img src="show/frvd_test/00001_0266_frame0_Est.png" title = "Denoise" width="200">
+</center>
+<center>Figure 1. Denoising result on Frame 0, [Noise, Target, Flow, Denoise]</center>
 
-![](show/frvd_test/00001_0266_frame1_Noise.png)
-![](show/frvd_test/00001_0266_frame1_Target.png)
-![](show/frvd_test/00001_0266_frame1_flow.png)
-![](show/frvd_test/00001_0266_frame1_Est.png)
+<center class="third">
+    <img src="show/frvd_test/00001_0266_frame1_Noise.png" width="200">
+    <img src="show/frvd_test/00001_0266_frame1_Target.png" width="200">
+    <img src="show/frvd_test/00001_0266_frame1_flow.png" width="200">
+    <img src="show/frvd_test/00001_0266_frame1_Est.png" width="200">
+</center>
+<center>Figure 2. Denoising result on Frame 1, [Noise, Target, Flow, Denoise]</center>
 
 2.training psnr via epochs
 
 ![](show/frvd_test/training_psnr.png)
+<center>Figure 3. Validation PSNR via epochs during training processing.</center>
 
 3.testing psnr via frame
 
 ![](show/frvd_test/psnr_frame.png)
+<center>Figure 4. testing PSNR via frame index.</center>
+
+Temporal inconsistencies have occured on ToFlow Denoising testing dataset. This is an urgent problem to be solved.
+
 
 
 ## 4 To do list...
