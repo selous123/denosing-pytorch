@@ -53,20 +53,20 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
 1.denoising results & optical flow results
 
 <p align="center">
-    <img src="show/frvd_test/00001_0266_frame0_Noise.png" Title = "Noise" width="200">
-    <img src="show/frvd_test/00001_0266_frame0_Target.png" title = "Target" width="200">
-    <img src="show/frvd_test/00001_0266_frame0_flow.png" title = "Flow" width="200">
-    <img src="show/frvd_test/00001_0266_frame0_Est.png" title = "Denoise" width="200">
-    <img src="show/frvd_test/00001_0266_frame0_warpresult.png" title = "warpresult" width="200">
+    <img src="show/frvd_test/00001_0266_frame0_Noise.png" Title = "Noise" width="150">
+    <img src="show/frvd_test/00001_0266_frame0_Target.png" title = "Target" width="150">
+    <img src="show/frvd_test/00001_0266_frame0_flow.png" title = "Flow" width="150">
+    <img src="show/frvd_test/00001_0266_frame0_Est.png" title = "Denoise" width="150">
+    <img src="show/frvd_test/00001_0266_frame0_warpresult.png" title = "warpresult" width="150">
 </p>
 <p align="center">Figure 1. Denoising result on Frame 0, [Noise, Target, Flow, Denoise, Warped-previous-frame]</p>
 
 <p align="center">
-    <img src="show/frvd_test/00001_0266_frame1_Noise.png" width="200">
-    <img src="show/frvd_test/00001_0266_frame1_Target.png" width="200">
-    <img src="show/frvd_test/00001_0266_frame1_flow.png" width="200">
-    <img src="show/frvd_test/00001_0266_frame1_Est.png" width="200">
-    <img src="show/frvd_test/00001_0266_frame1_warpresult.png" width="200">
+    <img src="show/frvd_test/00001_0266_frame1_Noise.png" width="150">
+    <img src="show/frvd_test/00001_0266_frame1_Target.png" width="150">
+    <img src="show/frvd_test/00001_0266_frame1_flow.png" width="150">
+    <img src="show/frvd_test/00001_0266_frame1_Est.png" width="150">
+    <img src="show/frvd_test/00001_0266_frame1_warpresult.png" width="150">
 </p>
 <p align="center">Figure 2. Denoising result on Frame 1, [Noise, Target, Flow, Denoise, Warped-previous-frame]</p>
 
