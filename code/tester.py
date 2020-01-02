@@ -45,7 +45,7 @@ class Tester():
             for nseqs, tseqs, pathname in tqdm(d, ncols=80):
                 filename = [fname[-10:] for fname in pathname]
                 nseqs, tseqs = self.prepare(nseqs, tseqs)
-                
+
                 h, w = nseqs.shape[3:]
                 self.model.model.init_hidden(h, w)
                 save_list = {}
@@ -57,10 +57,12 @@ class Tester():
 
                     fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
 
-                    flow = self.model.model.get_opticalflow_map()[-1]
+                    flow = self.model.model.get_opticalflow_map()
                     #flow = flow[0].detach().cpu().numpy().transpose([1,2,0])
                     #print(flow.shape)
                     save_list['flow'] = utility.vis_opticalflow(flow)
+
+                    save_list['warpresult'] = self.model.model.get_warpresult()
 
                     #break;
                     ## transfrt save_list to save_dict, with filename and images.

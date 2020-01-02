@@ -141,7 +141,8 @@ class FRVD(nn.Module):
         self.fnet = FNet().to(self.device)
         self.dnet = DNet(args).to(self.device)  # 3 is channel number
 
-        self.ofmaps=[]
+        self.ofmap = None
+        self.afterWarp = None
 
     # make sure to call this before every batch train.
     def init_hidden(self, height=None, width=None):
@@ -185,7 +186,7 @@ class FRVD(nn.Module):
         preflow = torch.cat((input, self.lastNoiseImg), dim=1)
         flow = self.fnet(preflow)
 
-        self.ofmaps.append(flow)
+        self.ofmap = flow
         #print("arch of fnet:", self.fnet)
         #print("f shape:", flow.shape)
         #print("lr identity:", self.lr_identity)
@@ -208,7 +209,10 @@ class FRVD(nn.Module):
         return self.EstTargetImg, self.EstNoiseImg
 
     def get_opticalflow_map(self):
-        return self.ofmaps
+        return self.ofmap
+
+    def get_warpresult(self):
+        return self.afterWarp
 
 class TestFRVSR(unittest.TestCase):
     def testFNet(self):

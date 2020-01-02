@@ -57,16 +57,18 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
     <img src="show/frvd_test/00001_0266_frame0_Target.png" title = "Target" width="200">
     <img src="show/frvd_test/00001_0266_frame0_flow.png" title = "Flow" width="200">
     <img src="show/frvd_test/00001_0266_frame0_Est.png" title = "Denoise" width="200">
+    <img src="show/frvd_test/00001_0266_frame0_warpresult.png" title = "warpresult" width="200">
 </p>
-<p align="center">Figure 1. Denoising result on Frame 0, [Noise, Target, Flow, Denoise]</p>
+<p align="center">Figure 1. Denoising result on Frame 0, [Noise, Target, Flow, Denoise, Warped-previous-frame]</p>
 
 <p align="center">
     <img src="show/frvd_test/00001_0266_frame1_Noise.png" width="200">
     <img src="show/frvd_test/00001_0266_frame1_Target.png" width="200">
     <img src="show/frvd_test/00001_0266_frame1_flow.png" width="200">
     <img src="show/frvd_test/00001_0266_frame1_Est.png" width="200">
+    <img src="show/frvd_test/00001_0266_frame1_warpresult.png" width="200">
 </p>
-<p align="center">Figure 2. Denoising result on Frame 1, [Noise, Target, Flow, Denoise]</p>
+<p align="center">Figure 2. Denoising result on Frame 1, [Noise, Target, Flow, Denoise, Warped-previous-frame]</p>
 
 2.training psnr via epochs
 
@@ -83,13 +85,13 @@ Figure 3. Validation PSNR via epochs during training processing.</p>
 <p align="center">
 Figure 4. testing PSNR via frame index.</p>
 
-Temporal inconsistencies have occured on ToFlow Denoising testing dataset. This is an urgent problem to be solved.
+Temporal inconsistencies have occured on ToFlow Denoising testing dataset due to the bad results of optical flow task. This is an urgent problem to be solved.
 
 
 
 ## 4 To do list...
 1. Use more realistic noised images
-2. analyze the reasons for not satisfying the time continuity, as shown in Section 3.1
+2. analyze the reasons for not satisfying the time continuity, as shown in Section 3.3
 
 ## 5. Licence
 This project is licensed under the GNU General Public License v3.0. The terms and conditions can be found in the LICENSE files.
