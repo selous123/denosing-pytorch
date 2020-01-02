@@ -118,7 +118,7 @@ class Trainer():
         self.ckp.write_log('\nEvaluation:')
 
         ## Add Log to loss_log matrix
-        ## with shape [1, 10]
+        ## with shape [idx_epoch, number_dataset]
         self.ckp.add_log(
             torch.zeros(1, len(self.loader_test))
         )

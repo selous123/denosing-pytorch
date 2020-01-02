@@ -2,7 +2,27 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 
-print('hello world')
+def make_model(args):
+    _model = FNet()
+    return _model
+
+
+
+class ConvLeaky(nn.Module):
+    def __init__(self, in_dim, out_dim):
+        super(ConvLeaky, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=in_dim, out_channels=out_dim,
+                               kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=out_dim, out_channels=out_dim,
+                               kernel_size=3, stride=1, padding=1)
+
+    def forward(self, input):
+        out = self.conv1(input)
+        out = func.leaky_relu(out, 0.2)
+        out = self.conv2(out)
+        out = func.leaky_relu(out, 0.2)
+        return out
+
 class FNetBlock(nn.Module):
     def __init__(self, in_dim, out_dim, typ):
         super(FNetBlock, self).__init__()

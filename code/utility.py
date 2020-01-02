@@ -15,6 +15,9 @@ import imageio
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
+import torch.nn.functional as func
+
+from option import args
 
 class timer():
     def __init__(self):
@@ -125,18 +128,33 @@ class checkpoint():
     def done(self):
         self.log_file.close()
 
-    def plot_psnr(self, epoch, name = None):
+    ## epoch can be see as the axis length
+    def plot_psnr(self, epoch, label=None, name = None):
+        assert epoch == self.log.shape[0]
+        
         axis = np.linspace(1, epoch, epoch)
         for idx_data, d in enumerate(self.args.data_test):
-            label = 'denoised on {}'.format(d)
+            ## 定制化需求
+            if label is None:
+                label = 'denoised on {}'.format(d)
             fig = plt.figure()
             plt.title(label)
-            #for idx_scale, scale in enumerate(self.args.scale):
-            plt.plot(
-                axis,
-                self.log[:, idx_data].numpy(),
-                label = 'PSNR'
-            )
+            print(self.log.shape)
+            ## the 0'th dimension should be same with epoch
+            if len(self.log.shape) == 3:
+                plt.plot(
+                    axis,
+                    self.log[:, :, idx_data].mean(1).numpy(),
+                    label = 'PSNR'
+                )
+            elif len(self.log.shape) == 2:
+                plt.plot(
+                    axis,
+                    self.log[:, idx_data].numpy(),
+                    label = 'PSNR'
+                )
+            else:
+                raise ValueError("Dimension Error, dimension of self.log should be 2 or 3")
             plt.legend()
             plt.xlabel(name)
             plt.ylabel('PSNR')
@@ -275,6 +293,25 @@ def vis_opticalflow(flow):
         #print(torch.tensor(bgr).unsqueeze(0).shape)
         bgrs = torch.cat((bgrs, torch.tensor(bgr).unsqueeze(0)), dim = 0)
     return bgrs.permute(0,3,1,2)
+
+
+## adopt flow map to warp original image
+def warpfunc(ori_image, flow_map):
+
+    height, width = flow_map.shape[2:4]
+    height_gap = 2 / (height - 1)
+    width_gap = 2 / (width - 1)
+    #print("::::::", height, width, height_gap, width_gap)
+    height, width = torch.meshgrid([torch.range(-1, 1, height_gap), torch.range(-1, 1, width_gap)])
+
+    device = torch.device('cpu' if args.cpu else 'cuda')
+    identity = torch.stack([width, height]).to(device)
+
+    relative_place = flow_map + identity
+
+    relative_placeNWHC = relative_place.permute(0, 2, 3, 1)
+    warped_image = func.grid_sample(ori_image, relative_placeNWHC)
+    return warped_image
 
 ## https://github.com/ClementPinard/FlowNetPytorch/blob/03c17be89ee0f613d3ac8d6f37d02830034a424e/util.py#L35
 ## have not been invoked.
