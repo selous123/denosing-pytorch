@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 
+print('hello world')
 class FNetBlock(nn.Module):
     def __init__(self, in_dim, out_dim, typ):
         super(FNetBlock, self).__init__()
