@@ -147,20 +147,20 @@ class FRVD(nn.Module):
     # make sure to call this before every batch train.
     def init_hidden(self, height=None, width=None):
         if self.training:
-            width = args.patch_size
-            height = args.patch_size
-            self.batch_size = args.batch_size
+            width = self.args.patch_size
+            height = self.args.patch_size
+            self.batch_size = self.args.batch_size
         else:
             ## keep the shape of testing data. We should specific the width and
             ## height through parameters
-            self.batch_size = args.test_batch_size
+            self.batch_size = self.args.test_batch_size
 
-            if args.test_patch_size == -1:
+            if self.args.test_patch_size == -1:
                 if height is None or width is None:
                     raise ValueError('Test patch size should be setting in parameters before model defined')
             else:
-                width = args.test_patch_size
-                height = args.test_patch_size
+                width = self.args.test_patch_size
+                height = self.args.test_patch_size
 
 
         self.lastNoiseImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
