@@ -1,0 +1,6 @@
+./color_flow  /home/lrh/git/blind-denoising/tvl1flow/of/tvl1_noise.flo /home/lrh/git/blind-denoising/tvl1flow/of/tvl1_noise.png
+
+
+ bash tvl1flow.sh image/target/im%d.png 1 2 of/tvl1_target.flo
+
+
