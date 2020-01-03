@@ -56,37 +56,114 @@ def warp(x, flo):
     return output, mask
 
 
-import imageio
+## pytorch
+# import imageio
+#
+# file = 'of/tvl1_target.flo'
+# img_file = 'image/target/im1.png'
+# img_np = imageio.imread(img_file)/255.0
+#
+# img2_file = 'image/target/im2.png'
+# img2_np = imageio.imread(img2_file)/255.0
+#
+# flow = read_flow(file)
+# flow = torch.tensor(flow).unsqueeze(0).permute(0,3,1,2)
+# print(flow.shape)
+#
+# target = torch.tensor(img_np).unsqueeze(0).permute(0,3,1,2).type(torch.FloatTensor)
+# print(target.shape)
+#
+# warp_result, mask = warp(target, flow)
+#
+# mask_w = warp_result * mask
+#
+# warp_result = warp_result[0].permute(1,2,0).numpy()
+# mask_w = mask_w[0].permute(1,2,0).numpy()
+# print(np.abs(warp_result - img_np).mean())
+#
+# print(np.abs(img2_np - img_np).mean())
+#
+# from matplotlib import pyplot as plt
+# plt.subplot(221)
+# plt.imshow(img_np)
+# plt.subplot(222)
+# plt.imshow(warp_result)
+# plt.subplot(223)
+# plt.imshow(img2_np)
+# plt.subplot(224)
+# plt.imshow(mask_w)
+# plt.show()
 
-file = 'of/tvl1_target.flo'
-img_file = 'image/target/im1.png'
-img_np = imageio.imread(img_file)/255.0
+# import imageio
+# import cv2
+# import numpy as np
+# img_file = 'image/target/im1.png'
+# prev_frame =  cv2.imread(img_file)
+#
+# prvs = cv2.cvtColor(prev_frame,cv2.COLOR_RGB2GRAY)
+# #
+# img2_file = 'image/target/im2.png'
+# next = cv2.imread(img2_file)
+# next = cv2.cvtColor(next,cv2.COLOR_RGB2GRAY)
+#
+# print(prvs.shape)
+# print(next.shape)
+#
+# flow = cv2.calcOpticalFlowFarneback(prvs,next,None, 0.5, 3, 15, 3, 5, 1.2, 0)
+#
+# print(flow.shape)
+#
+# avg_u = np.mean(flow[:, :, 0])
+# avg_v = np.mean(flow[:, :, 1])
+#
+# height = flow.shape[0]
+# width = flow.shape[1]
+# R2 = np.dstack(np.meshgrid(np.arange(width), np.arange(height)))
+# pixel_map = R2 + flow
+# print(pixel_map.shape)
+# new_frame = cv2.remap(prev_frame, pixel_map, None, cv2.INTER_LINEAR)
 
-img2_file = 'image/target/im2.png'
-img2_np = imageio.imread(img2_file)/255.0
 
-flow = read_flow(file)
+import cv2
+import numpy as np
+from imageio import imread
+img_file = '/home/lrh/git/FRVD-pytorch/tvl1flow/image/target/im3.png'
+img2_file = '/home/lrh/git/FRVD-pytorch/tvl1flow/image/target/im4.png'
 
-flow = torch.tensor(flow).unsqueeze(0).permute(0,3,1,2)
+prev_frame =  cv2.imread(img_file)
+next_frame = cv2.imread(img2_file)
+prvs = cv2.cvtColor(prev_frame,cv2.COLOR_RGB2GRAY)
+next = cv2.cvtColor(next_frame,cv2.COLOR_RGB2GRAY)
+# im1 = np.asarray(imread(img_file))
+# im2 = np.asarray(imread(img2_file))
+# im1 = np.float64(im1 / 255)
+# im2 = np.float64(im2 / 255)
 
+flow = cv2.calcOpticalFlowFarneback(prvs, next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
-target = torch.tensor(img_np).unsqueeze(0).permute(0,3,1,2).type(torch.FloatTensor)
-#print(target)
+def draw_hsv(flow):
+    h, w = flow.shape[:2]
+    fx, fy = flow[:,:,0], flow[:,:,1]
+    ang = np.arctan2(fy, fx) + np.pi
+    v = np.sqrt(fx*fx+fy*fy)
+    hsv = np.zeros((h, w, 3), np.uint8)
+    hsv[...,0] = ang*(180/np.pi/2)
+    hsv[...,1] = 255
+    hsv[...,2] = cv2.normalize(v, None, 0, 255, cv2.NORM_MINMAX)
+    bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    return bgr
 
-print(flow)
+def warp_flow(img, flow):
+    h, w = flow.shape[:2]
+    flow = -flow
+    flow[:,:,0] += np.arange(w)
+    flow[:,:,1] += np.arange(h)[:,np.newaxis]
+    res = cv2.remap(img, flow, None, cv2.INTER_LINEAR)
+    return res
 
-warp_result, mask = warp(target, flow)
-
-warp_result = warp_result[0].permute(1,2,0).numpy()
-print(np.abs(warp_result - img_np).mean())
-
-print(np.abs(img2_np - img_np).mean())
-
-from matplotlib import pyplot as plt
-plt.subplot(131)
-plt.imshow(img_np)
-plt.subplot(132)
-plt.imshow(warp_result)
-plt.subplot(133)
-plt.imshow(img2_np)
-plt.show()
+hsv = draw_hsv(flow)
+im2w = warp_flow(prev_frame, flow)
+cv2.imwrite("of/flow.jpg",hsv)
+cv2.imwrite("of/im1.jpg", prev_frame)
+cv2.imwrite("of/im2.jpg", next_frame)
+cv2.imwrite("of/im2w.jpg", im2w)
