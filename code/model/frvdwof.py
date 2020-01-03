@@ -8,10 +8,65 @@ sys.path.append('..')
 from option import args
 
 from model import common
-## Frame-Recurrent Video Denosing without any image alignment
+## Frame-Recurrent Video Denosing with Optical Flow
 def make_model(args, parent=False):
-    _model = FRVD(args)
+    _model = FRVDWOF(args)
     return _model
+
+
+class ConvLeaky(nn.Module):
+    def __init__(self, in_dim, out_dim):
+        super(ConvLeaky, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=in_dim, out_channels=out_dim,
+                               kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=out_dim, out_channels=out_dim,
+                               kernel_size=3, stride=1, padding=1)
+
+    def forward(self, input):
+        out = self.conv1(input)
+        out = func.leaky_relu(out, 0.2)
+        out = self.conv2(out)
+        out = func.leaky_relu(out, 0.2)
+        return out
+
+class FNetBlock(nn.Module):
+    def __init__(self, in_dim, out_dim, typ):
+        super(FNetBlock, self).__init__()
+        self.convleaky = ConvLeaky(in_dim, out_dim)
+        if typ == "maxpool":
+            self.final = lambda x: func.max_pool2d(x, kernel_size=2)
+        elif typ == "bilinear":
+            self.final = lambda x: func.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)
+        else:
+            raise Exception('Type does not match any of maxpool or bilinear')
+
+    def forward(self, input):
+        out = self.convleaky(input)
+        out = self.final(out)
+        return out
+
+class FNet(nn.Module):
+    def __init__(self, in_dim=6):
+        super(FNet, self).__init__()
+        self.convPool1 = FNetBlock(in_dim, 32, typ="maxpool")
+        self.convPool2 = FNetBlock(32, 64, typ="maxpool")
+        self.convPool3 = FNetBlock(64, 128, typ="maxpool")
+        self.convBinl1 = FNetBlock(128, 256, typ="bilinear")
+        self.convBinl2 = FNetBlock(256, 128, typ="bilinear")
+        self.convBinl3 = FNetBlock(128, 64, typ="bilinear")
+        self.seq = nn.Sequential(self.convPool1, self.convPool2, self.convPool3,
+                                 self.convBinl1, self.convBinl2, self.convBinl3)
+        self.conv1 = nn.Conv2d(in_channels=64, out_channels=32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=2, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, input):
+        out = self.seq(input)
+        out = self.conv1(out)
+        out = func.leaky_relu(out, 0.2)
+        out = self.conv2(out)
+        self.out = torch.tanh(out)
+        self.out.retain_grad()
+        return self.out
 
 class DNet(nn.Module):
     def __init__(self, args, in_dim=6, conv=common.default_conv):
@@ -77,14 +132,17 @@ class DNet(nn.Module):
                                    .format(name))
 
 
-class FRVD(nn.Module):
+class FRVDWOF(nn.Module):
     def __init__(self, args):
-        super(FRVD, self).__init__()
+        super(FRVDWOF, self).__init__()
         self.args = args
         self.device = torch.device('cpu' if args.cpu else 'cuda')
 
+        self.fnet = FNet().to(self.device)
         self.dnet = DNet(args).to(self.device)  # 3 is channel number
 
+        self.ofmap = None
+        self.afterWarp = None
 
     # make sure to call this before every batch train.
     def init_hidden(self, height=None, width=None):
@@ -108,6 +166,12 @@ class FRVD(nn.Module):
         self.lastNoiseImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
         #print("shape is :", self.lastNoiseImg.shape)
         self.EstTargetImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
+        height_gap = 2 / (height - 1)
+        width_gap = 2 / (width - 1)
+        #print("::::::", height, width, height_gap, width_gap)
+        height, width = torch.meshgrid([torch.range(-1, 1, height_gap), torch.range(-1, 1, width_gap)])
+        self.identity = torch.stack([width, height]).to(self.device)
+
         # height_gap = 2 / (self.height * self.SRFactor - 1)
         # width_gap = 2 / (self.width * self.SRFactor - 1)
         # height, width = torch.meshgrid([torch.range(-1, 1, height_gap), torch.range(-1, 1, width_gap)])
@@ -115,16 +179,49 @@ class FRVD(nn.Module):
 
     # x is a 4-d tensor of shape N×C×H×W
     def forward(self, input):
-        # Apply DNet
-        dnInput = torch.cat((input, self.EstTargetImg), dim=1)
+        # Apply FNet
+        # print(f'input.shape is {input.shape}, lastImg shape is {self.lastLrImg.shape}')
+        # print(input.shape)
+        # print(self.lastNoiseImg.shape)
+        preflow = torch.cat((input, self.lastNoiseImg), dim=1)
+        flow = self.fnet(preflow)
+
+        self.ofmap = flow
+        #print("arch of fnet:", self.fnet)
+        #print("f shape:", flow.shape)
+        #print("lr identity:", self.lr_identity)
+        relative_place = flow + self.identity
+        #print(torch.max(relative_place), torch.min(relative_place))
+        ## For calculate loss
+        relative_placeNWHC = relative_place.permute(0, 2, 3, 1)
+        self.EstNoiseImg = func.grid_sample(self.lastNoiseImg, relative_placeNWHC)
+        # print(self.EstNoiseImg)
+        afterWarp = func.grid_sample(self.EstTargetImg, relative_placeNWHC)
+        self.afterWarp = afterWarp  # for debugging, should be removed later.
+        #depthImg = self.todepth(afterWarp)
+
+        # Apply SRNet
+        dnInput = torch.cat((input, afterWarp), dim=1)
         estImg = self.dnet(dnInput)
         self.lastNoiseImg = input
         self.EstTargetImg = estImg
         self.EstTargetImg.retain_grad()
-        return self.EstTargetImg, self.lastNoiseImg
+        return self.EstTargetImg, self.EstNoiseImg
 
+    def get_opticalflow_map(self):
+        return self.ofmap
 
-class TestFRVD(unittest.TestCase):
+    def get_warpresult(self):
+        return self.afterWarp
+
+class TestFRVWOF(unittest.TestCase):
+    def testFNet(self):
+        block = FNet()
+        input = torch.rand(2, 6, 32, 56)
+        output = block(input)
+
+        #print(output.shape)
+        self.assertEqual(output.shape, torch.empty(2, 2, 32, 56).shape)
 
     def testDNet(self):
         block = DNet(args)
@@ -134,8 +231,8 @@ class TestFRVD(unittest.TestCase):
         #print("DNet shape:", output.shape)
         self.assertEqual(output.shape, torch.empty(2, 3, 32, 56).shape)
 
-    def testFRVD(self):
-        block = FRVD(args)
+    def testFRVDWOF(self):
+        block = FRVDWOF(args)
         block.eval()
         if block.training:
             H = args.patch_size

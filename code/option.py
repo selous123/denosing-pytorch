@@ -43,7 +43,7 @@ parser.add_argument('--data_train', type=str, default='ToFlow',
                     help='train dataset name')
 parser.add_argument('--data_test', type=str, default='ToFlow',
                     help='test dataset name')
-parser.add_argument('--data_range', type=str, default='1-800/801-810',
+parser.add_argument('--data_range', type=str, default='1-7700/7701-7824',
                     help='train/test data range')
 parser.add_argument('--ext', type=str, default='sep',
                     help='dataset file extension')
@@ -66,6 +66,11 @@ parser.add_argument('--no_augment', action='store_true',
 parser.add_argument('--model', default='FRVD',
                     help='model name')
 
+## model_label 0 => optical-flow only
+## model_label 1 => frame-recurrent only
+## model_label 2 => frame-recurrent with optical flow.
+parser.add_argument('--model_label', default=2,
+                    help='choose model combine for loss definition')
 # parser.add_argument('--train', action='store_true',
 #                     help='train or not')
 parser.add_argument('--act', type=str, default='relu',
@@ -109,9 +114,9 @@ parser.add_argument('--gan_k', type=int, default=1,
                     help='k value for adversarial loss')
 
 # Optimization specifications
-parser.add_argument('--lr', type=float, default=1e-6,
+parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
-parser.add_argument('--decay', type=str, default='200',
+parser.add_argument('--decay', type=str, default='50-150-200-250',
                     help='learning rate decay type')
 parser.add_argument('--gamma', type=float, default=0.5,
                     help='learning rate decay factor for step decay')

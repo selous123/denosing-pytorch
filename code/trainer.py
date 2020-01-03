@@ -111,6 +111,8 @@ class Trainer():
         self.error_last = self.loss[0].log[-1, -1, -1].mean()
         self.optimizer.schedule()
 
+
+
     def test(self):
         torch.set_grad_enabled(False)
 

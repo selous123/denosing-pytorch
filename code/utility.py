@@ -129,9 +129,9 @@ class checkpoint():
         self.log_file.close()
 
     ## epoch can be see as the axis length
-    def plot_psnr(self, epoch, label=None, name = None):
-        assert epoch == self.log.shape[0]
-        
+    def plot_psnr(self, epoch, dimension=1, label=None, name=None):
+        assert epoch == self.log.shape[1 - dimension]
+
         axis = np.linspace(1, epoch, epoch)
         for idx_data, d in enumerate(self.args.data_test):
             ## 定制化需求
@@ -139,12 +139,11 @@ class checkpoint():
                 label = 'denoised on {}'.format(d)
             fig = plt.figure()
             plt.title(label)
-            print(self.log.shape)
             ## the 0'th dimension should be same with epoch
             if len(self.log.shape) == 3:
                 plt.plot(
                     axis,
-                    self.log[:, :, idx_data].mean(1).numpy(),
+                    self.log[:, :, idx_data].mean(dimension).numpy(),
                     label = 'PSNR'
                 )
             elif len(self.log.shape) == 2:

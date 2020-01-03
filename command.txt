@@ -1,3 +1,4 @@
+# For Denoising
 ##For Training:
 ```
 python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results
@@ -6,4 +7,19 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results
 ## For Testing:
 ```
 python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results --save "frvd-test" --test_only --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvd-v0.1/model/model_best.pt --data_range 1-810/811-850
+```
+
+
+
+# For optical-flow
+## For Training
+```
+python flowmain.py --model fnet --save_results --save_gt --save "fnet-v0.1-target"
+```
+
+
+# For FR only
+## For Training
+```
+python main.py --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2"  --data_range '1-800/801-824'
 ```

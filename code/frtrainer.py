@@ -10,9 +10,9 @@ import torch
 import torch.nn.utils as utils
 from tqdm import tqdm
 
-class FlowTrainer(trainer.Trainer):
+class FRTrainer(trainer.Trainer):
     def __init__(self, args, loader, my_model, my_loss, ckp):
-        super(FlowTrainer, self).__init__(args, loader, my_model, my_loss, ckp)
+        super(FRTrainer, self).__init__(args, loader, my_model, my_loss, ckp)
 
 
     def train(self):
@@ -34,6 +34,7 @@ class FlowTrainer(trainer.Trainer):
         timer_data, timer_model = utility.timer(), utility.timer()
 
         for batch, (nseqs, tseqs, _,) in enumerate(self.loader_train):
+
             nseqs, tseqs = self.prepare(nseqs, tseqs)
             #print(nseqs.shape)
 
@@ -41,23 +42,24 @@ class FlowTrainer(trainer.Trainer):
             timer_model.tic()
 
             self.optimizer.zero_grad()
+            self.model.init_hidden()
             loss = 0
-
-            for idx_frame in range(len(tseqs)-1):
-
+            for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
+                ## fakeTarget for t'th denoised frame
+                ## fakeNoise for (t-1)'th noised frame alignmented
                 ## after optical-flow
-                input = torch.cat((tseqs[idx_frame], tseqs[idx_frame+1]), dim=1)
-                flowmap = self.model(input)
+                fakeTarget, _ = self.model(nseq)
 
-                ## warped result
-                warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
-                ## loss for optical-flow
-                loss += self.loss[0](warped_image, tseqs[idx_frame+1])
+                ## loss for denoised
+                ld = self.loss[0](fakeTarget, tseq, idx_frame)
 
+                loss += ld
+                
+            #print(loss)
             ## Loss STEP 3
             [l.batch_sum() for l in self.loss]
             #exit(0)
-            loss /= (len(tseqs) - 1)
+            loss /= len(nseqs)
             loss.backward()
             if self.args.gclip > 0:
                 utils.clip_grad_value_(
@@ -85,7 +87,14 @@ class FlowTrainer(trainer.Trainer):
         self.error_last = self.loss[0].log[-1, -1, -1].mean()
         self.optimizer.schedule()
 
+    """
+    test function:
 
+    Add dimension for self.ckp.log value to save the frame PSNR
+    and plot the mean PSNR via frame idx..
+    Data  : 2020.1.3
+    Author: Tao Zhang
+    """
     def test(self):
         torch.set_grad_enabled(False)
 
@@ -93,9 +102,9 @@ class FlowTrainer(trainer.Trainer):
         self.ckp.write_log('\nEvaluation:')
 
         ## Add Log to loss_log matrix
-        ## with shape [7, 1]
+        ## with shape [idx_epoch, number_dataset]
         self.ckp.add_log(
-            torch.zeros(1, self.args.n_frames-1, len(self.loader_test))
+            torch.zeros(1, self.args.n_frames, len(self.loader_test))
         )
         self.model.eval()
 
@@ -106,35 +115,32 @@ class FlowTrainer(trainer.Trainer):
                 filename = [fname[-10:] for fname in pathname]
                 nseqs, tseqs = self.prepare(nseqs, tseqs)
 
-                #self.model.init_hidden()
+                self.model.init_hidden()
                 #save_list = []
                 save_list = {}
-                for idx_frame in range(len(tseqs)-1):
-
+                for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
+                    ## fakeTarget for t'th denoised frame
+                    ## fakeNoise for (t-1)'th noised frame alignmented
                     ## after optical-flow
-                    input = torch.cat((tseqs[idx_frame], tseqs[idx_frame+1]), dim=1)
-                    flowmap = self.model(input)
+                    fakeTarget, fakeNoise = self.model(nseq)
 
-                    ## save flow map
-                    save_list['flow'] = utility.vis_opticalflow(flowmap)
-                    ## warped result
-                    warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
-                    warped_image = utility.quantize(warped_image, self.args.rgb_range)
 
-                    save_list['warped'] = warped_image
+                    fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
 
+                    save_list['Est'] = fakeTarget
                     self.ckp.log[-1, idx_frame, idx_data] += utility.calc_psnr(
-                        warped_image, tseqs[idx_frame+1], self.args.rgb_range, dataset=d
+                        fakeTarget, tseq, self.args.rgb_range, dataset=d
                     )
                     if self.args.save_gt:
-                        save_list['Target'] = tseqs[idx_frame+1]
+                        save_list['Noise'] = nseq
+                        save_list['Target'] = tseq
                         #save_list.extend([nseq, tseq])
 
                     if self.args.save_results:
                         self.ckp.save_results(d, filename[0], save_list, idx_frame)
 
-            self.ckp.log[-1, :, idx_data] /= len(d)
-            self.ckp.write_log((self.ckp.log[-1, :, idx_data]))
+            self.ckp.log[-1, : , idx_data] /= len(d)
+            self.ckp.write_log('{}\'th epoch, PSNR via frame: {}'.format(epoch, self.ckp.log[-1, :, idx_data]))
             epoch_best, epoch_idx = self.ckp.log.max(0)
             best, frame_idx = epoch_best.max(0)
             best_frame_idx = frame_idx[idx_data]
@@ -154,10 +160,11 @@ class FlowTrainer(trainer.Trainer):
 
         if self.args.save_results:
             self.ckp.end_background()
+            ## plot PNSR via frame index.
 
         if not self.args.test_only:
             self.ckp.save(self, epoch, is_best=(best_epoch_idx == epoch))
-
+            self.ckp.plot_psnr(self.args.n_frames, dimension = 0, name = 'idx_frame')
         self.ckp.write_log(
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
         )
