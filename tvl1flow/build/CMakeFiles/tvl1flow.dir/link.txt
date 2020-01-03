@@ -1,0 +1,1 @@
+/usr/bin/cc     CMakeFiles/tvl1flow.dir/main.o  -o tvl1flow  -L/home/lrh/git/blind-denoising/tvl1flow/build/lib -rdynamic lib/libiio.so -ltiff -ljpeg -lpng -lm -Wl,-rpath,/home/lrh/git/blind-denoising/tvl1flow/build/lib 
