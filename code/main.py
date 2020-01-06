@@ -6,6 +6,8 @@ import model
 import loss
 from option import args
 from trainer import Trainer
+from flowtrainer import FlowTrainer
+from flowtester import FlowTester
 from frtrainer import FRTrainer
 from tester import Tester
 
@@ -17,6 +19,7 @@ def main():
     if checkpoint.ok:
         loader = data.Data(args)
         _model = model.Model(args, checkpoint)
+
         _loss = []
         if not args.test_only:
             ## only for optical flow
@@ -44,8 +47,12 @@ def main():
                 t.train()
                 t.test()
         else:
-            t = Tester(args, loader, _model, checkpoint)
-            t.test()
+            if int(args.model_label) == 0:
+                t = FlowTester(args, loader, _model, checkpoint)
+                t.test()
+            else:
+                t = Tester(args, loader, _model, checkpoint)
+                t.test()
 
         checkpoint.done()
 

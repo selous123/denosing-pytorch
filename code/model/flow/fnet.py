@@ -6,8 +6,6 @@ def make_model(args):
     _model = FNet()
     return _model
 
-
-
 class ConvLeaky(nn.Module):
     def __init__(self, in_dim, out_dim):
         super(ConvLeaky, self).__init__()

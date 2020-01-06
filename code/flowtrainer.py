@@ -47,12 +47,22 @@ class FlowTrainer(trainer.Trainer):
 
                 ## after optical-flow
                 input = torch.cat((tseqs[idx_frame], tseqs[idx_frame+1]), dim=1)
-                flowmap = self.model(input)
 
-                ## warped result
-                warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
-                ## loss for optical-flow
-                loss += self.loss[0](warped_image, tseqs[idx_frame+1])
+                flowmaps = self.model(input)
+
+                if type(flowmaps) in [tuple, list]:
+                    l = 0
+                    weights = [0.005, 0.01, 0.02, 0.08, 0.32]
+                    assert len(flowmaps) == len(weights)
+                    for flowmap, weight in zip(flowmaps, weights):
+                    ## warped result
+                        warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
+                        l += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
+
+                    loss += l
+                else:
+                    ## loss for optical-flow
+                    loss += self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
 
             ## Loss STEP 3
             [l.batch_sum() for l in self.loss]
@@ -70,11 +80,10 @@ class FlowTrainer(trainer.Trainer):
 
             ## Loss STEP 4
             if (batch + 1) % self.args.print_every == 0:
-                self.ckp.write_log('[{}/{}]\t{}\t{}\t{:.1f}+{:.1f}s'.format(
+                self.ckp.write_log('[{}/{}]\t{}\t{:.1f}+{:.1f}s'.format(
                     (batch + 1) * self.args.batch_size,
                     len(self.loader_train.dataset),
                     self.loss[0].display_loss(batch),
-                    loss,
                     timer_model.release(),
                     timer_data.release()))
 
@@ -134,7 +143,8 @@ class FlowTrainer(trainer.Trainer):
                         self.ckp.save_results(d, filename[0], save_list, idx_frame)
 
             self.ckp.log[-1, :, idx_data] /= len(d)
-            self.ckp.write_log((self.ckp.log[-1, :, idx_data]))
+            print(self.ckp.log[-1, :, idx_data])
+            #self.ckp.write_log((self.ckp.log[-1, :, idx_data]))
             epoch_best, epoch_idx = self.ckp.log.max(0)
             best, frame_idx = epoch_best.max(0)
             best_frame_idx = frame_idx[idx_data]
@@ -144,8 +154,8 @@ class FlowTrainer(trainer.Trainer):
                     d.dataset.name,
                     self.ckp.log[-1, :, idx_data].mean(),
                     best[0],
-                    best_frame_idx,
-                    best_epoch_idx
+                    best_frame_idx + 1,
+                    best_epoch_idx + 1
                 )
             )
 
@@ -156,7 +166,7 @@ class FlowTrainer(trainer.Trainer):
             self.ckp.end_background()
 
         if not self.args.test_only:
-            self.ckp.save(self, epoch, is_best=(best_epoch_idx == epoch))
+            self.ckp.save(self, epoch, is_best=(best_epoch_idx + 1 == epoch))
 
         self.ckp.write_log(
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True

@@ -54,7 +54,7 @@ class FRTrainer(trainer.Trainer):
                 ld = self.loss[0](fakeTarget, tseq, idx_frame)
 
                 loss += ld
-                
+
             #print(loss)
             ## Loss STEP 3
             [l.batch_sum() for l in self.loss]
@@ -150,8 +150,8 @@ class FRTrainer(trainer.Trainer):
                     d.dataset.name,
                     self.ckp.log[-1, :, idx_data].mean(),
                     best[0],
-                    best_frame_idx,
-                    best_epoch_idx
+                    best_frame_idx + 1,
+                    best_epoch_idx + 1
                 )
             )
 
@@ -163,7 +163,7 @@ class FRTrainer(trainer.Trainer):
             ## plot PNSR via frame index.
 
         if not self.args.test_only:
-            self.ckp.save(self, epoch, is_best=(best_epoch_idx == epoch))
+            self.ckp.save(self, epoch, is_best=(best_epoch_idx + 1 == epoch))
             self.ckp.plot_psnr(self.args.n_frames, dimension = 0, name = 'idx_frame')
         self.ckp.write_log(
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True

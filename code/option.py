@@ -43,7 +43,8 @@ parser.add_argument('--data_train', type=str, default='ToFlow',
                     help='train dataset name')
 parser.add_argument('--data_test', type=str, default='ToFlow',
                     help='test dataset name')
-parser.add_argument('--data_range', type=str, default='1-7700/7701-7824',
+## ALL Data: '1-7700/7701-7824'
+parser.add_argument('--data_range', type=str, default='1-800/801-824',
                     help='train/test data range')
 parser.add_argument('--ext', type=str, default='sep',
                     help='dataset file extension')
@@ -98,7 +99,7 @@ parser.add_argument('--reset', action='store_true',
                     help='reset the training')
 parser.add_argument('--test_every', type=int, default=1000,
                     help='do test per every N batches')
-parser.add_argument('--epochs', type=int, default=300,
+parser.add_argument('--epochs', type=int, default=200,
                     help='number of epochs to train')
 parser.add_argument('--batch_size', type=int, default=16,
                     help='input batch size for training')
@@ -116,7 +117,7 @@ parser.add_argument('--gan_k', type=int, default=1,
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
-parser.add_argument('--decay', type=str, default='50-150-200-250',
+parser.add_argument('--decay', type=str, default='25-50-100-150',
                     help='learning rate decay type')
 parser.add_argument('--gamma', type=float, default=0.5,
                     help='learning rate decay factor for step decay')

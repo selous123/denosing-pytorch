@@ -91,7 +91,7 @@ Temporal inconsistencies have occured on ToFlow Denoising testing dataset due to
 ## Updated 3.  Result Presentation
 3.1. realistic noised images
 
-We have reprocessed the ToFlow dataset, and and more realistic noise on images.
+We have reprocessed the ToFlow dataset, and add more realistic noise on images.
 <p align="center">
     <img src="show/frvd_v0.2_test/im1.png" width="200">
     <img src="show/frvd_v0.2_test/00010_0724_frame0_Noise.png" width="200">

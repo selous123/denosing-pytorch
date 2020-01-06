@@ -295,9 +295,17 @@ def vis_opticalflow(flow):
 
 
 ## adopt flow map to warp original image
-def warpfunc(ori_image, flow_map):
+def warpfunc(ori_image, flow_map, sparse=False):
+
+    b, _, h, w = ori_image.size()
+    if sparse:
+        flow_map = sparse_max_pool(flow_map, (h, w))
+    else:
+        flow_map = func.interpolate(flow_map, (h, w), mode='area')
 
     height, width = flow_map.shape[2:4]
+    assert height == h and width == w
+
     height_gap = 2 / (height - 1)
     width_gap = 2 / (width - 1)
     #print("::::::", height, width, height_gap, width_gap)
