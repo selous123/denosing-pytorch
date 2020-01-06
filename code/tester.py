@@ -57,17 +57,15 @@ class Tester():
 
                     fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
 
-                    flow = self.model.model.get_opticalflow_map()
-                    #flow = flow[0].detach().cpu().numpy().transpose([1,2,0])
-                    #print(flow.shape)
-                    save_list['flow'] = utility.vis_opticalflow(flow)
-
-                    save_list['warpresult'] = self.model.model.get_warpresult()
+                    if self.args.save_optical:
+                        flow = self.model.model.get_opticalflow_map()
+                        save_list['flow'] = utility.vis_opticalflow(flow)
+                        save_list['warpresult'] = self.model.model.get_warpresult()
 
                     #break;
                     ## transfrt save_list to save_dict, with filename and images.
                     save_list['Est'] = fakeTarget
-
+                    #print('shape:', fakeTarget.shape)
 
                     self.ckp.log[idx_frame, idx_data] += utility.calc_psnr(
                         fakeTarget, tseq, self.args.rgb_range, dataset=d

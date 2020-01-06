@@ -88,10 +88,37 @@ Figure 4. testing PSNR via frame index.</p>
 Temporal inconsistencies have occured on ToFlow Denoising testing dataset due to the bad results of optical flow task. This is an urgent problem to be solved.
 
 
+## Updated 3.  Result Presentation
+3.1. realistic noised images
+<p align="center">
+    <img src="show/frvd_v0.2_test/im1.png" width="150">
+    <img src="show/frvd_v0.2_test/00010_0724_frame0_Noise.png" width="150">
+    <img src="show/frvd_v0.2_test/im2.png" width="150">
+    <img src="show/frvd_v0.2_test/00010_0739_frame0_Noise.png" width="150">
+</p>
+<p align="center">
+Figure 5.  Gaussian noised images and more-Realistic noised images.</p>
+
+3.2. Results Presentation
+
+```
+command:
+
+python main.py --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2"  --data_range '1-800/801-824'
+```
+
+We have tried  **Frame-recurrent Video Denoising method witout optical flow**. The PSNR results on test datasets
+are satisfying the time continuity, as shown in following figure. We assert that the bad results of optical flow task
+have pose a negative effect on denoising task.
+<p align="center">
+<img src="show/frvd_v0.2_test/idx_frame_psnr.png">
+</p>
+<p align="center">
+Figure 6. Testing PSNR via frame index.</p>
+
 
 ## 4 To do list...
-1. Use more realistic noised images
-2. analyze the reasons for not satisfying the time continuity, as shown in Section 3.3
+4.1 improve optical-flow task performance.
 
 ## 5. Licence
 This project is licensed under the GNU General Public License v3.0. The terms and conditions can be found in the LICENSE files.
