@@ -91,10 +91,10 @@ Temporal inconsistencies have occured on ToFlow Denoising testing dataset due to
 ## Updated 3.  Result Presentation
 3.1. realistic noised images
 <p align="center">
-    <img src="show/frvd_v0.2_test/im1.png" width="150">
-    <img src="show/frvd_v0.2_test/00010_0724_frame0_Noise.png" width="150">
-    <img src="show/frvd_v0.2_test/im2.png" width="150">
-    <img src="show/frvd_v0.2_test/00010_0739_frame0_Noise.png" width="150">
+    <img src="show/frvd_v0.2_test/im1.png" width="200">
+    <img src="show/frvd_v0.2_test/00010_0724_frame0_Noise.png" width="200">
+    <img src="show/frvd_v0.2_test/im2.png" width="200">
+    <img src="show/frvd_v0.2_test/00010_0739_frame0_Noise.png" width="200">
 </p>
 <p align="center">
 Figure 5.  Gaussian noised images and more-Realistic noised images.</p>
