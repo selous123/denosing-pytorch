@@ -90,6 +90,8 @@ Temporal inconsistencies have occured on ToFlow Denoising testing dataset due to
 
 ## Updated 3.  Result Presentation
 3.1. realistic noised images
+
+We have reprocessed the ToFlow dataset, and and more realistic noise on images.
 <p align="center">
     <img src="show/frvd_v0.2_test/im1.png" width="200">
     <img src="show/frvd_v0.2_test/00010_0724_frame0_Noise.png" width="200">
@@ -101,15 +103,16 @@ Figure 5.  Gaussian noised images and more-Realistic noised images.</p>
 
 3.2. Results Presentation
 
+We have tried  **Frame-recurrent Video Denoising method witout optical flow**. The PSNR results on test datasets
+are satisfying the time continuity, as shown in following figure. We assert that the bad results of optical flow task
+have pose a negative effect on denoising task.
+
 ```
 command:
 
 python main.py --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2"  --data_range '1-800/801-824'
 ```
 
-We have tried  **Frame-recurrent Video Denoising method witout optical flow**. The PSNR results on test datasets
-are satisfying the time continuity, as shown in following figure. We assert that the bad results of optical flow task
-have pose a negative effect on denoising task.
 <p align="center">
 <img src="show/frvd_v0.2_test/idx_frame_psnr.png">
 </p>
