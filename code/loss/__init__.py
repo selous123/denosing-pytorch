@@ -18,6 +18,9 @@ class Loss(nn.modules.loss._Loss):
 
         if ls is None:
             ls = args.loss
+            self.name = 'denoise'
+        else:
+            self.name = ls.split('_')[-1]
 
         self.n_frames = args.n_frames
         self.n_GPUs = args.n_GPUs
@@ -35,6 +38,13 @@ class Loss(nn.modules.loss._Loss):
                     loss_type[3:],
                     rgb_range=args.rgb_range
                 )
+            elif loss_type.find('TVL1')>=0:
+                module = import_module('loss.tvloss')
+                loss_function = getattr(module, 'TVL1')()
+            elif loss_type.find('TVL2')>=0:
+                module = import_module('loss.tvloss')
+                loss_function = getattr(module, 'TVL2')()
+
             elif loss_type.find('GAN') >= 0:
                 module = import_module('loss.adversarial')
                 loss_function = getattr(module, 'Adversarial')(
@@ -78,7 +88,11 @@ class Loss(nn.modules.loss._Loss):
         losses = []
         for i, l in enumerate(self.loss):
             if l['function'] is not None:
-                loss = l['function'](est, target)
+                ## TV Loss only need 1 parameter
+                if l['type'].find('TV')>=0:
+                    loss = l['function'](est)
+                else:
+                    loss = l['function'](est, target)
                 effective_loss = l['weight'] * loss
                 losses.append(effective_loss)
                 self.log[-1, i, idx] += effective_loss.item()
@@ -89,7 +103,6 @@ class Loss(nn.modules.loss._Loss):
         loss_sum = sum(losses)
         if len(self.loss) > 1:
             self.log[-1, -1, idx] += loss_sum.item()
-
         return loss_sum
 
     def batch_sum(self):

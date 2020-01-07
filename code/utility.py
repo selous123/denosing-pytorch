@@ -88,23 +88,22 @@ class checkpoint():
     def get_path(self, *subdir):
         return os.path.join(self.dir, *subdir)
 
-    def save(self, trainer, epoch, is_best=False):
+    def save(self, trainer, epoch,  is_best=False, plot_title=None):
         trainer.model.save(self.get_path('model'), epoch, is_best=is_best)
-
         if isinstance(trainer.loss, list):
-            names = ["loss_denoised", "loss_flow"]
+            # names = ["loss_denoised", "loss_flow"]
             # if self.args.loss_rel is not None:
             #     names.append("loss_rel")
             for i,l in enumerate(trainer.loss):
-                l.save(self.dir, names[i])
-                l.plot_loss(self.dir, epoch, names[i])
+                l.save(self.dir, l.name)
+                l.plot_loss(self.dir, epoch, l.name)
         else:
-            trainer.loss.save(self.dir)
-            trainer.loss.plot_loss(self.dir, epoch)
+            trainer.loss.save(self.dir, l.name)
+            trainer.loss.plot_loss(self.dir, epoch, l.name)
         # trainer.loss.save(self.dir)
         # trainer.loss.plot_loss(self.dir, epoch)
 
-        self.plot_psnr(epoch)
+        self.plot_psnr(epoch, label=plot_title)
         trainer.optimizer.save(self.dir)
         torch.save(self.log, self.get_path('psnr_log.pt'))
 
@@ -294,8 +293,45 @@ def vis_opticalflow(flow):
     return bgrs.permute(0,3,1,2)
 
 
-## adopt flow map to warp original image
 def warpfunc(ori_image, flow_map, sparse=False):
+    """
+    warp an image/tensor (im2) back to im1, according to the optical flow.
+    Code heavily inspired by
+    x: [B, C, H, W] (im2)
+    flo: [B, 2, H, W] flow
+    """
+    B, C, H, W = ori_image.size()
+    if sparse:
+        flow_map = sparse_max_pool(flow_map, (H, W))
+    else:
+        flow_map = func.interpolate(flow_map, (H, W), mode='area')
+    device = torch.device('cpu' if args.cpu else 'cuda')
+    # mesh grid
+    xx = torch.arange(0, W).view(1, -1).repeat(H, 1).to(device)
+    yy = torch.arange(0, H).view(-1, 1).repeat(1, W).to(device)
+    xx = xx.view(1, 1, H, W).repeat(B, 1, 1, 1)
+    yy = yy.view(1, 1, H, W).repeat(B, 1, 1, 1)
+    grid = torch.cat((xx, yy), 1).float()
+    #print(grid)
+    grid = grid
+    vgrid = grid + flow_map
+
+    # scale grid to [-1,1]
+    vgrid[:, 0, :, :] = 2.0*vgrid[:, 0, :, :]/max(W-1, 1)-1.0
+    vgrid[:, 1, :, :] = 2.0*vgrid[:, 1, :, :]/max(H-1, 1)-1.0
+    vgrid = vgrid.permute(0, 2, 3, 1)
+    output = func.grid_sample(ori_image, vgrid)
+    # Define a first mask containing pixels that wasn't properly interpolated
+    mask = torch.autograd.Variable(torch.ones(ori_image.size())).to(device)
+    mask = func.grid_sample(mask, vgrid)
+    mask[mask < 0.9999] = 0
+    mask[mask > 0] = 1
+
+    return output
+
+
+## adopt flow map to warp original image
+def warpfunc_tanh(ori_image, flow_map, sparse=False):
 
     b, _, h, w = ori_image.size()
     if sparse:

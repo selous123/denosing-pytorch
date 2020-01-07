@@ -14,11 +14,12 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
 ```
 python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.2-target" --data_range "1-800/801-824"
 python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.2-target" --data_range "1-800/801-824"
+python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "1.0*L1" --loss_freg '1.0*TVL1' --save_results --save_gt --save "fnet-v0.4-target" --data_range "1-800/801-824"
 ```
 
 ## For Testing
 ```
-python main.py --model fnet --model_label 0 --save_results --save_gt --save "fnet-v0.1-test-target"  --data_range "901-930" --test_only --pre_train "/home/lrh/git/FRVD-pytorch/experiment/fnet-v0.1-target/model/model_latest.pt" --test_patch_size -1
+python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.1-test-target"  --data_range "901-930" --test_only --pre_train "/home/lrh/git/FRVD-pytorch/experiment/fnet-v0.1-target/model/model_latest.pt" --test_patch_size -1
 ```
 
 # For FR only

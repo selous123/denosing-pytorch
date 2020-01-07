@@ -42,6 +42,8 @@ class FlowTrainer(trainer.Trainer):
 
             self.optimizer.zero_grad()
             loss = 0
+            loss_data = 0
+            loss_reg = 0
 
             for idx_frame in range(len(tseqs)-1):
 
@@ -51,23 +53,41 @@ class FlowTrainer(trainer.Trainer):
                 flowmaps = self.model(input)
 
                 if type(flowmaps) in [tuple, list]:
-                    l = 0
+                    l_data = 0
+                    l_reg = 0
                     weights = [0.005, 0.01, 0.02, 0.08, 0.32]
+                    #weights = [1.0, 1.0, 1.0, 1.0, 1.0]
                     assert len(flowmaps) == len(weights)
                     for flowmap, weight in zip(flowmaps, weights):
                     ## warped result
                         warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
-                        l += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
+                        #print(flowmap.max(), flowmap.min())
+                        l_data += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
+                        if self.args.loss_freg is not None:
+                            #loss_reg += weight * self.loss[1](flowmap, None, idx_frame)
+                            l_reg += weight * self.loss[1](flowmap, None, idx_frame)
+                            #l += loss_reg
 
-                    loss += l
+                    loss_data += l_data
+                    loss_reg += l_reg
+                    loss += (l_data + l_reg)
+
                 else:
                     ## loss for optical-flow
                     loss += self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
 
             ## Loss STEP 3
+
+
             [l.batch_sum() for l in self.loss]
-            #exit(0)
-            loss /= (len(tseqs) - 1)
+            # print(loss_data)
+            # print(loss_reg)
+            # print(self.loss[0].log)
+            # print(self.loss[1].log)
+            # print(loss,loss_data)
+            # exit(0)
+            #print(self.loss[0].display_loss(batch))
+            #loss /= (len(tseqs) - 1)
             loss.backward()
             if self.args.gclip > 0:
                 utils.clip_grad_value_(
@@ -80,10 +100,13 @@ class FlowTrainer(trainer.Trainer):
 
             ## Loss STEP 4
             if (batch + 1) % self.args.print_every == 0:
-                self.ckp.write_log('[{}/{}]\t{}\t{:.1f}+{:.1f}s'.format(
+                self.ckp.write_log('[{}/{}]\t{}\t{}\t{}\t{}\t{:.1f}+{:.1f}s'.format(
                     (batch + 1) * self.args.batch_size,
                     len(self.loader_train.dataset),
                     self.loss[0].display_loss(batch),
+                    self.loss[1].display_loss(batch),
+                    loss,
+                    loss_data,
                     timer_model.release(),
                     timer_data.release()))
 
@@ -102,9 +125,9 @@ class FlowTrainer(trainer.Trainer):
         self.ckp.write_log('\nEvaluation:')
 
         ## Add Log to loss_log matrix
-        ## with shape [7, 1]
+        ## with shape [n_frames, 1]
         self.ckp.add_log(
-            torch.zeros(1, self.args.n_frames-1, len(self.loader_test))
+            torch.zeros(1, self.args.n_frames, len(self.loader_test))
         )
         self.model.eval()
 
@@ -130,6 +153,7 @@ class FlowTrainer(trainer.Trainer):
                     warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
                     warped_image = utility.quantize(warped_image, self.args.rgb_range)
 
+                    save_list['source'] = tseqs[idx_frame]
                     save_list['warped'] = warped_image
 
                     self.ckp.log[-1, idx_frame, idx_data] += utility.calc_psnr(
@@ -166,7 +190,7 @@ class FlowTrainer(trainer.Trainer):
             self.ckp.end_background()
 
         if not self.args.test_only:
-            self.ckp.save(self, epoch, is_best=(best_epoch_idx + 1 == epoch))
+            self.ckp.save(self, epoch, is_best=(best_epoch_idx + 1 == epoch), plot_title='optical-flow')
 
         self.ckp.write_log(
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True

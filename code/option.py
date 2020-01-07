@@ -117,7 +117,7 @@ parser.add_argument('--gan_k', type=int, default=1,
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
-parser.add_argument('--decay', type=str, default='25-50-100-150',
+parser.add_argument('--decay', type=str, default='15-25-50-100-150',
                     help='learning rate decay type')
 parser.add_argument('--gamma', type=float, default=0.5,
                     help='learning rate decay factor for step decay')
@@ -140,6 +140,9 @@ parser.add_argument('--loss', type=str, default='1*L1',
                     help='loss function configuration for denoising task')
 parser.add_argument('--loss_flow', type=str, default='1*L1',
                     help='loss function configuration for optila flow task')
+parser.add_argument('--loss_freg', type=str, default='1*TVL1',
+                    help='regularization term, loss function configuration'
+                    'for optical flow task')
 parser.add_argument('--skip_threshold', type=float, default='1e8',
                     help='skipping batch that has large error')
 

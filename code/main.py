@@ -25,6 +25,8 @@ def main():
             ## only for optical flow
             if int(args.model_label) == 0:
                 _loss.append(loss.Loss(args, checkpoint, ls = args.loss_flow))
+                if args.loss_freg is not None:
+                    _loss.append(loss.Loss(args, checkpoint, ls = args.loss_freg))
                 t = FlowTrainer(args, loader, _model, _loss, checkpoint)
             ## only for frame-recurrent
             elif int(args.model_label) == 1:
