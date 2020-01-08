@@ -34,6 +34,7 @@ class FlowTrainer(trainer.Trainer):
         timer_data, timer_model = utility.timer(), utility.timer()
 
         for batch, (nseqs, tseqs, _,) in enumerate(self.loader_train):
+            ## optical-flow for noised images or target images
             nseqs, tseqs = self.prepare(nseqs, tseqs)
             #print(nseqs.shape)
 
@@ -42,8 +43,7 @@ class FlowTrainer(trainer.Trainer):
 
             self.optimizer.zero_grad()
             loss = 0
-            loss_data = 0
-            loss_reg = 0
+            loss_input_data = {}
 
             for idx_frame in range(len(tseqs)-1):
 
@@ -54,7 +54,6 @@ class FlowTrainer(trainer.Trainer):
 
                 if type(flowmaps) in [tuple, list]:
                     l_data = 0
-                    l_reg = 0
                     weights = [0.005, 0.01, 0.02, 0.08, 0.32]
                     #weights = [1.0, 1.0, 1.0, 1.0, 1.0]
                     assert len(flowmaps) == len(weights)
@@ -62,15 +61,19 @@ class FlowTrainer(trainer.Trainer):
                     ## warped result
                         warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
                         #print(flowmap.max(), flowmap.min())
-                        l_data += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
-                        if self.args.loss_freg is not None:
+                        loss_input_data['est'] = warped_image
+                        loss_input_data['target'] = tseqs[idx_frame+1]
+                        loss_input_data['flowmap'] = flowmap
+
+                        #l_data += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
+                        l_data += weight * self.loss[0](loss_input_data, idx_frame)
+                        #if self.args.loss_freg is not None:
                             #loss_reg += weight * self.loss[1](flowmap, None, idx_frame)
-                            l_reg += weight * self.loss[1](flowmap, None, idx_frame)
+                            #l_reg += weight * self.loss[0](loss_input_data, idx_frame)
                             #l += loss_reg
 
-                    loss_data += l_data
-                    loss_reg += l_reg
-                    loss += (l_data + l_reg)
+                    #loss_reg += l_reg
+                    loss += l_data
 
                 else:
                     ## loss for optical-flow
@@ -100,13 +103,11 @@ class FlowTrainer(trainer.Trainer):
 
             ## Loss STEP 4
             if (batch + 1) % self.args.print_every == 0:
-                self.ckp.write_log('[{}/{}]\t{}\t{}\t{}\t{}\t{:.1f}+{:.1f}s'.format(
+                self.ckp.write_log('[{}/{}]\t{}\t{}\t{:.1f}+{:.1f}s'.format(
                     (batch + 1) * self.args.batch_size,
                     len(self.loader_train.dataset),
                     self.loss[0].display_loss(batch),
-                    self.loss[1].display_loss(batch),
                     loss,
-                    loss_data,
                     timer_model.release(),
                     timer_data.release()))
 

@@ -37,7 +37,7 @@ class FlowTester():
         ## Add Log to loss_log matrix
         ## with shape [number_frames, number_test_dataset]
         self.ckp.add_log(
-            torch.zeros(self.args.n_frames - 1, len(self.loader_test))
+            torch.zeros(self.args.n_frames, len(self.loader_test))
         )
         self.model.eval()
 
@@ -67,6 +67,7 @@ class FlowTester():
                         warped_image, tseqs[idx_frame+1], self.args.rgb_range, dataset=d
                     )
                     if self.args.save_gt:
+                        save_list['source'] = tseqs[idx_frame]
                         save_list['Target'] = tseqs[idx_frame+1]
                         #save_list.extend([nseq, tseq])
 

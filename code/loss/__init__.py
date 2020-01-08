@@ -20,7 +20,7 @@ class Loss(nn.modules.loss._Loss):
             ls = args.loss
             self.name = 'denoise'
         else:
-            self.name = ls.split('_')[-1]
+            self.name = 'optical-flow'
 
         self.n_frames = args.n_frames
         self.n_GPUs = args.n_GPUs
@@ -84,15 +84,16 @@ class Loss(nn.modules.loss._Loss):
         #print(self.loss)
     ## idx represents idx'th recurrent loss value
     ## calculate loss function
-    def forward(self, est, target, idx = 0):
+    def forward(self, data, idx = 0):
         losses = []
         for i, l in enumerate(self.loss):
             if l['function'] is not None:
                 ## TV Loss only need 1 parameter
                 if l['type'].find('TV')>=0:
-                    loss = l['function'](est)
+                    loss = l['function'](data['flowmap'])
                 else:
-                    loss = l['function'](est, target)
+                    loss = l['function'](data['est'], data['target'])
+
                 effective_loss = l['weight'] * loss
                 losses.append(effective_loss)
                 self.log[-1, i, idx] += effective_loss.item()

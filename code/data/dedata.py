@@ -140,7 +140,10 @@ class DeData(data.Dataset):
         # to tensor
         pair_t = common.np2Tensor(pair, rgb_range=self.args.rgb_range)
         #print("process data time:", e2time-etime)
-        return pair_t[1], pair_t[0], dirname
+        if self.args.tn:
+            return pair_t[0], pair_t[1], dirname
+        else:
+            return pair_t[1], pair_t[0], dirname
 
     def __len__(self):
         if self.train:

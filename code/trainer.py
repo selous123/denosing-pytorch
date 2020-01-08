@@ -64,6 +64,8 @@ class Trainer():
             self.optimizer.zero_grad()
             self.model.init_hidden()
             loss = 0
+            loss_input_data_flow = {}
+            loss_input_data_denoise = {}
             for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
                 ## fakeTarget for t'th denoised frame
                 ## fakeNoise for (t-1)'th noised frame alignmented
@@ -71,10 +73,18 @@ class Trainer():
                 fakeTarget, fakeNoise = self.model(nseq)
 
                 ## loss for denoised
-                ld = self.loss[0](fakeTarget, tseq, idx_frame)
+                loss_input_data_denoise['est'] = fakeTarget
+                loss_input_data_denoise['target'] = tseq
+                ld = self.loss[0](loss_input_data_denoise, idx_frame)
                 #exit(0)
                 ## loss for optical-flow
-                lf = self.loss[1](fakeNoise, nseq, idx_frame)
+                loss_input_data_flow['est'] = fakeNoise
+                loss_input_data_flow['target'] = nseq
+                ## return flowmap
+                flow = self.model.model.get_opticalflow_map()
+                loss_input_data_flow['flowmap'] = flowmap
+
+                lf = self.loss[1](loss_input_data_flow, idx_frame)
 
                 loss += (ld + lf)
 

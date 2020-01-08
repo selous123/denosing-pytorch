@@ -62,6 +62,8 @@ parser.add_argument('--chop', action='store_true',
                     help='enable memory-efficient forward')
 parser.add_argument('--no_augment', action='store_true',
                     help='do not use data augmentation')
+parser.add_argument('--tn', action='store_true',
+                    help='return target+noise images instead of noise+target seq')
 
 # Model specifications
 parser.add_argument('--model', default='FRVD',
@@ -136,13 +138,13 @@ parser.add_argument('--gclip', type=float, default=0,
                     help='gradient clipping threshold (0 = no clipping)')
 
 # Loss specifications
-parser.add_argument('--loss', type=str, default='1*L1',
+parser.add_argument('--loss_denoise', type=str, default='1*L1',
                     help='loss function configuration for denoising task')
 parser.add_argument('--loss_flow', type=str, default='1*L1',
                     help='loss function configuration for optila flow task')
-parser.add_argument('--loss_freg', type=str, default='1*TVL1',
-                    help='regularization term, loss function configuration'
-                    'for optical flow task')
+# parser.add_argument('--loss_freg', type=str, default='1*TVL1',
+#                     help='regularization term, loss function configuration'
+#                     'for optical flow task')
 parser.add_argument('--skip_threshold', type=float, default='1e8',
                     help='skipping batch that has large error')
 

@@ -1,6 +1,24 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+"""
+This is Non-Local Operator for Feature Denoising...
+In order to get better performance of optical-flow task
+in the noised environment.
+
+Author: Tao Zhang
+Data  : 2020.01.08
+"""
+def denoising_op(x, embed=True, softmax=True):
+    #f = non_local_op(x, embed, softmax)
+    #f = nn.Conv2d()()
+    #x = x + f
+    #return x
+    pass
+
+def non_local_op(x, embed, softmax):
+    pass
+
 # try:
 #     from spatial_correlation_sampler import spatial_correlation_sample
 # except ImportError as e:

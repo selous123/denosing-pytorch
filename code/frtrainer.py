@@ -44,14 +44,19 @@ class FRTrainer(trainer.Trainer):
             self.optimizer.zero_grad()
             self.model.init_hidden()
             loss = 0
+            loss_input_data = {}
+            
             for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
                 ## fakeTarget for t'th denoised frame
                 ## fakeNoise for (t-1)'th noised frame alignmented
                 ## after optical-flow
                 fakeTarget, _ = self.model(nseq)
 
+                loss_input_data['est'] = fakeTarget
+                loss_input_data['target'] = tseq
+
                 ## loss for denoised
-                ld = self.loss[0](fakeTarget, tseq, idx_frame)
+                ld = self.loss[0](loss_input_data, idx_frame)
 
                 loss += ld
 

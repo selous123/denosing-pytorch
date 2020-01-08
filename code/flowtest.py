@@ -5,6 +5,7 @@ import glob
 import imageio
 import torch
 import os
+import utility
 from tqdm import tqdm
 """
 We need this function to predict single test files.
@@ -15,16 +16,24 @@ and plot results.
 Author: Tao Zhang (Selous)
 Data  : 2019.12.26(Start)~
 """
-import model.frvd
+import model.flow.flownets
 import utility
 from option import args
-#checkpoint = utility.checkpoint(args)
-_model = model.frvd.make_model(args)
+
+
+
+ckp = utility.checkpoint(args)
+_model = model.flow.flownets.make_model(args)
 _model.load_state_dict(torch.load(args.pre_train))
+
+ckp.add_log(torch.zeros(args.n_frames, 1))
 
 def load_video_data(data_dir):
     noised_paths = glob.glob(os.path.join(data_dir, "noised", "*.png"))
     target_paths = glob.glob(os.path.join(data_dir, "target", "*.png"))
+    noised_paths.sort()
+    target_paths.sort()
+    #print([os.path.basename(target_path) for target_path in target_paths])
     noised_images = []
     target_images = []
     for noised_path, target_path in zip(noised_paths, target_paths):
@@ -42,32 +51,41 @@ def load_video_data(data_dir):
 dirdata = '/store/dataset/vdenoising/vimeo/v1/'
 noise_input, target = load_video_data(dirdata)
 
+print(noise_input.shape)
 device = torch.device('cpu' if args.cpu else 'cuda')
 noise_input, target = noise_input.to(device), target.to(device)
 
 _model = _model.to(device)
 _model.eval()
 
-h, w = noise_input.shape[3:]
-_model.init_hidden(h,w)
 
 print(noise_input.shape)
-print(h,w)
-import time
-import numpy as np
-psnrs = []
-for idx_frame in tqdm(range(len(noise_input)), ncols=80):
-    nseq, tseq = noise_input[idx_frame], target[idx_frame]
-    ## fakeTarget for t'th denoised frame
-    ## fakeNoise for (t-1)'th noised frame alignmented
+
+if args.save_results: ckp.begin_background()
+save_list = {}
+for idx_frame in tqdm(range(len(target)-1), ncols=80):
     ## after optical-flow
-    with torch.no_grad():
-        fakeTarget, _ = _model(nseq)
-    psnrs.append(utility.calc_psnr(fakeTarget, tseq, args.rgb_range))
+    input = torch.cat((target[idx_frame], target[idx_frame+1]), dim=1)
+    flowmap = _model(input)
 
-print(psnrs)
-np.save('/home/lrh/git/FRVD-pytorch/experiment/vimeo_denoise_test.npy', np.array(psnrs))
-print('saved!')
+    save_list['flow'] = utility.vis_opticalflow(flowmap)
+    ## warped result
+    warped_image = utility.warpfunc(target[idx_frame], flowmap)
+    warped_image = utility.quantize(warped_image, args.rgb_range)
 
+    save_list['warped'] = warped_image
 
-#_model(noise_input)
+    ckp.log[idx_frame, 0] = utility.calc_psnr(warped_image, target[idx_frame+1], args.rgb_range)
+
+    if args.save_gt:
+        save_list['source'] = target[idx_frame]
+        save_list['Target'] = target[idx_frame+1]
+        #save_list.extend([nseq, tseq])
+
+    if args.save_results:
+        ckp.save_results('vimeo', 'v1/test', save_list, idx_frame)
+
+if args.save_results:
+    ckp.end_background()
+
+ckp.plot_psnr(args.n_frames, name = 'idx_frame')

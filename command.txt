@@ -15,6 +15,8 @@ python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results -
 python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.2-target" --data_range "1-800/801-824"
 python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.2-target" --data_range "1-800/801-824"
 python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "1.0*L1" --loss_freg '1.0*TVL1' --save_results --save_gt --save "fnet-v0.4-target" --data_range "1-800/801-824"
+python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+1.0*TVL1" --save_results --save_gt --save "test-loss" --data_range "1-800/801-824"
+python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+1.0*TVL1" --save_results --save_gt --save "fnet-v0.5-noise" --tn --data_range "1-800/801-824"
 ```
 
 ## For Testing
@@ -30,4 +32,15 @@ python main.py --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_l
 
 ## For Testing
 python main.py --test_only --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2-test" --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvd-v0.2/model/model_latest.pt  --data_range '901-930' --test_patch_size -1
+```
+
+
+
+For test with Vimeo dataset
+```
+## optical-flow
+python flowtest.py --n_frames 657 --pre_train /home/lrh/git/FRVD-pytorch/experiment/fnet-v0.4-target/model/model_latest.pt --save_results --save_gt --save 'fnet-v0.4-vimeo-test' --data_test vimeo
+
+## denoise only
+python test.py --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvd-v0.2/model/model_best.pt
 ```

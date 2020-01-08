@@ -189,13 +189,13 @@ class checkpoint():
         if self.args.save_results:
             if idx_frame is None:
                 filename = self.get_path(
-                    'results-{}'.format(dataset.dataset.name),
+                    'results-{}'.format(dataset if isinstance(dataset, str) else dataset.dataset.name),
                     '{}_{}_'.format(*filename.split('/'))
                 )
             else:
                 assert type(idx_frame) is int
                 filename = self.get_path(
-                    'results-{}'.format(dataset.dataset.name),
+                    'results-{}'.format(dataset if isinstance(dataset, str) else dataset.dataset.name),
                     '{}_{}_{}_'.format(*filename.split('/'), 'frame'+str(idx_frame))
                 )
 

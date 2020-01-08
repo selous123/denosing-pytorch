@@ -117,9 +117,12 @@ class FRVD(nn.Module):
     def forward(self, input):
         # Apply DNet
         dnInput = torch.cat((input, self.EstTargetImg), dim=1)
+        #print(dnInput.shape)
         estImg = self.dnet(dnInput)
         self.lastNoiseImg = input
+        #print(self.lastNoiseImg.shape)
         self.EstTargetImg = estImg
+        #print(self.EstTargetImg.shape)
         self.EstTargetImg.retain_grad()
         return self.EstTargetImg, self.lastNoiseImg
 
