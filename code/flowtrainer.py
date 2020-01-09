@@ -44,13 +44,14 @@ class FlowTrainer(trainer.Trainer):
             self.optimizer.zero_grad()
             loss = 0
             loss_input_data = {}
-
             for idx_frame in range(len(tseqs)-1):
-
+                t1, t2 = tseqs[idx_frame], tseqs[idx_frame+1]
                 ## after optical-flow
-                input = torch.cat((tseqs[idx_frame], tseqs[idx_frame+1]), dim=1)
+                input = torch.cat((t1, t2), dim=1)
 
                 flowmaps = self.model(input)
+                predx = self.model.model.get_predenoised()
+                t1, t2 = predx.chunk(2, dim=1)
 
                 if type(flowmaps) in [tuple, list]:
                     l_data = 0
@@ -59,10 +60,10 @@ class FlowTrainer(trainer.Trainer):
                     assert len(flowmaps) == len(weights)
                     for flowmap, weight in zip(flowmaps, weights):
                     ## warped result
-                        warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
+                        warped_image = utility.warpfunc(t1, flowmap)
                         #print(flowmap.max(), flowmap.min())
                         loss_input_data['est'] = warped_image
-                        loss_input_data['target'] = tseqs[idx_frame+1]
+                        loss_input_data['target'] = t2
                         loss_input_data['flowmap'] = flowmap
 
                         #l_data += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
@@ -77,8 +78,7 @@ class FlowTrainer(trainer.Trainer):
 
                 else:
                     ## loss for optical-flow
-                    loss += self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
-
+                    loss += self.loss[0](warped_image, t2, idx_frame)
             ## Loss STEP 3
 
 
@@ -144,24 +144,27 @@ class FlowTrainer(trainer.Trainer):
                 save_list = {}
                 for idx_frame in range(len(tseqs)-1):
 
+                    t1, t2 = tseqs[idx_frame], tseqs[idx_frame+1]
                     ## after optical-flow
-                    input = torch.cat((tseqs[idx_frame], tseqs[idx_frame+1]), dim=1)
+                    input = torch.cat((t1, t2), dim=1)
                     flowmap = self.model(input)
+                    predx = self.model.model.get_predenoised()
+                    t1, t2 = predx.chunk(2, dim=1)
 
                     ## save flow map
                     save_list['flow'] = utility.vis_opticalflow(flowmap)
                     ## warped result
-                    warped_image = utility.warpfunc(tseqs[idx_frame], flowmap)
+                    warped_image = utility.warpfunc(t1, flowmap)
                     warped_image = utility.quantize(warped_image, self.args.rgb_range)
 
-                    save_list['source'] = tseqs[idx_frame]
+                    save_list['source'] = t1
                     save_list['warped'] = warped_image
 
                     self.ckp.log[-1, idx_frame, idx_data] += utility.calc_psnr(
-                        warped_image, tseqs[idx_frame+1], self.args.rgb_range, dataset=d
+                        warped_image, t2, self.args.rgb_range, dataset=d
                     )
                     if self.args.save_gt:
-                        save_list['Target'] = tseqs[idx_frame+1]
+                        save_list['Target'] = t2
                         #save_list.extend([nseq, tseq])
 
                     if self.args.save_results:

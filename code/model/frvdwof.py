@@ -4,9 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as func
 from torchvision.models import vgg16
 import sys
+from .flow import flownets as flownets
+
 sys.path.append('..')
 from option import args
-
+import utility
 from model import common
 ## Frame-Recurrent Video Denosing with Optical Flow
 def make_model(args, parent=False):
@@ -138,7 +140,7 @@ class FRVDWOF(nn.Module):
         self.args = args
         self.device = torch.device('cpu' if args.cpu else 'cuda')
 
-        self.fnet = FNet().to(self.device)
+        self.fnet = flownets.make_model(args).to(self.device)
         self.dnet = DNet(args).to(self.device)  # 3 is channel number
 
         self.ofmap = None
@@ -166,11 +168,11 @@ class FRVDWOF(nn.Module):
         self.lastNoiseImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
         #print("shape is :", self.lastNoiseImg.shape)
         self.EstTargetImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
-        height_gap = 2 / (height - 1)
-        width_gap = 2 / (width - 1)
-        #print("::::::", height, width, height_gap, width_gap)
-        height, width = torch.meshgrid([torch.range(-1, 1, height_gap), torch.range(-1, 1, width_gap)])
-        self.identity = torch.stack([width, height]).to(self.device)
+        # height_gap = 2 / (height - 1)
+        # width_gap = 2 / (width - 1)
+        # #print("::::::", height, width, height_gap, width_gap)
+        # height, width = torch.meshgrid([torch.range(-1, 1, height_gap), torch.range(-1, 1, width_gap)])
+        # self.identity = torch.stack([width, height]).to(self.device)
 
         # height_gap = 2 / (self.height * self.SRFactor - 1)
         # width_gap = 2 / (self.width * self.SRFactor - 1)
@@ -183,30 +185,33 @@ class FRVDWOF(nn.Module):
         # print(f'input.shape is {input.shape}, lastImg shape is {self.lastLrImg.shape}')
         # print(input.shape)
         # print(self.lastNoiseImg.shape)
-        preflow = torch.cat((input, self.lastNoiseImg), dim=1)
+        preflow = torch.cat((self.lastNoiseImg, input), dim=1)
         flow = self.fnet(preflow)
 
         self.ofmap = flow
-        #print("arch of fnet:", self.fnet)
-        #print("f shape:", flow.shape)
-        #print("lr identity:", self.lr_identity)
-        relative_place = flow + self.identity
-        #print(torch.max(relative_place), torch.min(relative_place))
-        ## For calculate loss
-        relative_placeNWHC = relative_place.permute(0, 2, 3, 1)
-        self.EstNoiseImg = func.grid_sample(self.lastNoiseImg, relative_placeNWHC)
-        # print(self.EstNoiseImg)
-        afterWarp = func.grid_sample(self.EstTargetImg, relative_placeNWHC)
+        ####original warped operator
+        # relative_place = flow + self.identity
+        # relative_placeNWHC = relative_place.permute(0, 2, 3, 1)
+        # self.EstNoiseImg = func.grid_sample(self.lastNoiseImg, relative_placeNWHC)
+        # # print(self.EstNoiseImg)
+        # afterWarp = func.grid_sample(self.EstTargetImg, relative_placeNWHC)
+        ####invoke from utility
+        #self.EstNoiseImg = utility.warpfunc(self.lastNoiseImg, flow)
+        if self.training:
+            flow = flow[0]
+            
+        afterWarp = utility.warpfunc(self.EstTargetImg, flow)
         self.afterWarp = afterWarp  # for debugging, should be removed later.
-        #depthImg = self.todepth(afterWarp)
-
-        # Apply SRNet
+        # Apply DNet
         dnInput = torch.cat((input, afterWarp), dim=1)
         estImg = self.dnet(dnInput)
         self.lastNoiseImg = input
         self.EstTargetImg = estImg
         self.EstTargetImg.retain_grad()
-        return self.EstTargetImg, self.EstNoiseImg
+        return self.EstTargetImg
+
+    def get_optical_input(self):
+        return self.fnet.get_predenoised()
 
     def get_opticalflow_map(self):
         return self.ofmap

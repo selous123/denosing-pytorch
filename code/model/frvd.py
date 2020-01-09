@@ -6,6 +6,7 @@ from torchvision.models import vgg16
 import sys
 sys.path.append('..')
 from option import args
+from flow import flownets
 
 from model import common
 ## Frame-Recurrent Video Denosing without any image alignment

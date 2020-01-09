@@ -2,6 +2,8 @@
 ##For Training:
 ```
 python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results
+### frvd with optical-flow task
+python main.py --model frvdwof --n_frames 7 --model_label 2  --loss_denoise "4.0*L1" --loss_flow "4.0*L1+3.0*TVL1" --save_result --save_gt --save_of --save "frvdwof-v0.1" --data_range "1-800/801-824"
 ```
 
 ## For Testing:
@@ -17,6 +19,7 @@ python main.py --model flow.flownets --model_label 0 --save_results --save_gt --
 python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "1.0*L1" --loss_freg '1.0*TVL1' --save_results --save_gt --save "fnet-v0.4-target" --data_range "1-800/801-824"
 python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+1.0*TVL1" --save_results --save_gt --save "test-loss" --data_range "1-800/801-824"
 python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+1.0*TVL1" --save_results --save_gt --save "fnet-v0.5-noise" --tn --data_range "1-800/801-824"
+python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+4.0*TVL1" --save_results --save_gt --save "fnet-v0.6-pre_dnoise" --tn  --data_range "1-800/801-824"
 ```
 
 ## For Testing

@@ -163,7 +163,7 @@ parser.add_argument('--save_results', action='store_true',
                     help='save output results')
 parser.add_argument('--save_gt', action='store_true',
                     help='save low-resolution and high-resolution images together')
-parser.add_argument('--save_optical', action='store_true',
+parser.add_argument('--save_of', action='store_true',
                     help='save optical-flow map and warped result.')
 
 args = parser.parse_args()

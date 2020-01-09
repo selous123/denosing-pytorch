@@ -1,4 +1,4 @@
-# denoising-pytorch
+# Denoising-Pytorch
 image/video denosing with pytorch code
 
 
@@ -46,7 +46,7 @@ We have adopted mse loss for training now.
 
 ### 2.3 Training Command
 ```
-python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results --save "frvd-v0.1"
+python main.py --model frvdwof --n_frames 7 --model_label 2  --loss_denoise "4.0*L1" --loss_flow "4.0*L1+3.0*TVL1" --save_result --save_gt --save_of --save "frvdwof-v0.1" --data_range "1-800/801-824"
 ```
 
 ## 3. Result Presentation
@@ -107,11 +107,6 @@ We have tried  **Frame-recurrent Video Denoising method witout optical flow**. T
 are satisfying the time continuity, as shown in following figure. We assert that the bad results of optical flow task
 have pose a negative effect on denoising task.
 
-```
-command:
-
-python main.py --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2"  --data_range '1-800/801-824'
-```
 
 <p align="center">
 <img src="show/frvd_v0.2_test/idx_frame_psnr.png">
@@ -119,12 +114,66 @@ python main.py --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_l
 <p align="center">
 Figure 6. Testing PSNR via frame index.</p>
 
+## 4. Refined Optical-Flow task
+The Optical Flow Task is motivated by [AAAI 2018 paper](https://pdfs.semanticscholar.org/47bc/34ae6f5dc104bc289ae3bb4fa75ef75fbc21.pdf)
+Command:
+```
+python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+4.0*TVL1" --save_results --save_gt --save "fnet-v0.6-pre_dnoise" --tn  --data_range "1-800/801-824"
+```
+4.1 Architecture
+<p align="center">
+<img src="show/of/architecture.png">
+</p>
+<p align="center">
+Figure 6. Architecture of optical flow we used.</p>
+4.2 Loss
+<p align="center">
+<img src="show/of/loss.png">
+</p>
+<p align="center">
+Figure 7. Loss function.</p>
 
-## 4 To do list...
-4.1 improve optical-flow task performance.
+4.3 Results Presentation
 
-## 5. Licence
+<p align="center">
+<img src="show/of/psnr.png">
+</p>
+<p align="center">
+Figure 8.1. PSNR of validation set on clean data.</p>
+
+<p align="center">
+<img src="show/of/of.png">
+</p>
+<p align="center">
+Figure 8.2. aligned results of validation set on clean data.</p>
+
+<p align="center">
+<img src="show/of/psnr_noise.png">
+</p>
+<p align="center">
+Figure 9.1. PSNR of validation set on noised data.</p>
+
+<p align="center">
+<img src="show/of/of_noise.png">
+</p>
+<p align="center">
+Figure 9.2. aligned results of validation set on noised data.</p>
+
+**Conclusion: The PSNR value on noised data is far lower than that on clean data. The optical map has many noised points as shown in Figure 9.2 compared with Figure 8.2.**
+
+Refined plan (On Training):
+1. Integrating denoising module into FlowNetS-module.
+2. Tuning the trade-off parameter $\lambda$ in Loss Function. TV Loss is instrumental to constrain the smoothness property of flow-map.
+
+
+## 5. To do list...
+5.1 Data Loader for vimeo test dataset...
+
+5.2 Integrate the refined optical-flow model into FRVD(Updated 3). 
+
+
+## 6. Licence
 This project is licensed under the GNU General Public License v3.0. The terms and conditions can be found in the LICENSE files.
 
-## 6. Contribution
+## 7. Contribution
 Tao Zhang (lrhselous@nuaa.edu.cn)

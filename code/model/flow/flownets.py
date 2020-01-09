@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.init import kaiming_normal_, constant_
 from .util import conv, predict_flow, deconv, crop_like
-
+from .filters import GaussianSmoothing
 
 def make_model(args):
     _model = FlowNetS(batchNorm=True)
@@ -15,6 +15,7 @@ class FlowNetS(nn.Module):
     def __init__(self,batchNorm=True):
         super(FlowNetS,self).__init__()
 
+        self.pre_denoise = GaussianSmoothing(channels=6, kernel_size=7, padding=3)
         self.batchNorm = batchNorm
         self.conv1   = conv(self.batchNorm,   6,   64, kernel_size=3, stride=1)
         self.conv2   = conv(self.batchNorm,  64,  128, kernel_size=3, stride=1)
@@ -54,7 +55,14 @@ class FlowNetS(nn.Module):
 
         self.upsample1 = nn.Upsample(scale_factor=4, mode='bilinear')
 
+    def get_predenoised(self):
+        return self.predx
+
     def forward(self, x):
+        with torch.no_grad():
+            x = self.pre_denoise(x)
+        self.predx = x
+
         out_conv2 = self.conv2(self.conv1(x))
         out_conv3 = self.conv3_1(self.conv3(out_conv2))
         out_conv4 = self.conv4_1(self.conv4(out_conv3))

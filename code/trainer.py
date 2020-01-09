@@ -7,6 +7,9 @@ import utility
 import torch
 import torch.nn.utils as utils
 from tqdm import tqdm
+from model.filters import GaussianSmoothing
+pre_denoise = GaussianSmoothing(channels=3, kernel_size=7, padding=3)
+pre_denoise = pre_denoise.cuda()
 
 class Trainer():
     def __init__(self, args, loader, my_model, my_loss, ckp):
@@ -70,25 +73,50 @@ class Trainer():
                 ## fakeTarget for t'th denoised frame
                 ## fakeNoise for (t-1)'th noised frame alignmented
                 ## after optical-flow
-                fakeTarget, fakeNoise = self.model(nseq)
-
+                fakeTarget = self.model(nseq)
                 ## loss for denoised
                 loss_input_data_denoise['est'] = fakeTarget
                 loss_input_data_denoise['target'] = tseq
                 ld = self.loss[0](loss_input_data_denoise, idx_frame)
                 #exit(0)
+
                 ## loss for optical-flow
-                loss_input_data_flow['est'] = fakeNoise
-                loss_input_data_flow['target'] = nseq
-                ## return flowmap
-                flow = self.model.model.get_opticalflow_map()
-                loss_input_data_flow['flowmap'] = flowmap
+                # if idx_frame == 0:
+                #     ## we should not compute the optical-flow loss
+                #     ## for 0'th frame with full-zero matrix.
+                #     lf = 0
+                # else:
+                ## Get The pre-denoised output for calculate
+                ## The Loss for optical-flow task
+                ## t1: for t-1'th frame and t2: for t'th frame
+                t1, t2 = self.model.model.get_optical_input().chunk(2, dim=1)
+                flowmaps = self.model.model.get_opticalflow_map()
 
-                lf = self.loss[1](loss_input_data_flow, idx_frame)
+                lf = 0
+                if type(flowmaps) in [tuple, list]:
+                    weights = [0.005, 0.01, 0.02, 0.08, 0.32]
+                    #weights = [1.0, 1.0, 1.0, 1.0, 1.0]
+                    assert len(flowmaps) == len(weights)
+                    for flowmap, weight in zip(flowmaps, weights):
+                    ## warped result
+                        warped_image = utility.warpfunc(t1, flowmap)
+                        #print(flowmap.max(), flowmap.min())
+                        ## L1 (est, target)
+                        loss_input_data_flow['est'] = warped_image
+                        loss_input_data_flow['target'] = t2
+                        ##TVL1(flowmap)
+                        loss_input_data_flow['flowmap'] = flowmap
 
+                        #l_data += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
+                        lf += weight * self.loss[1](loss_input_data_flow, idx_frame)
+
+                else:
+                    warped_image = utility.warpfunc(t1, flowmaps)
+                    ## loss for optical-flow
+                    lf = self.loss[1](warped_image, t2, idx_frame)
+                # print("l0:", self.loss[0].display_loss(batch))
+                # print("l1:", self.loss[1].display_loss(batch))
                 loss += (ld + lf)
-
-            #print(loss)
             ## Loss STEP 3
             [l.batch_sum() for l in self.loss]
             #exit(0)
@@ -132,7 +160,7 @@ class Trainer():
         ## Add Log to loss_log matrix
         ## with shape [idx_epoch, number_dataset]
         self.ckp.add_log(
-            torch.zeros(1, len(self.loader_test))
+            torch.zeros(1, self.args.n_frames, len(self.loader_test))
         )
         self.model.eval()
 
@@ -150,31 +178,45 @@ class Trainer():
                     ## fakeTarget for t'th denoised frame
                     ## fakeNoise for (t-1)'th noised frame alignmented
                     ## after optical-flow
-                    fakeTarget, fakeNoise = self.model(nseq)
+                    fakeTarget = self.model(nseq)
+                    fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
 
+                    save_list['Est'] = fakeTarget ## t estimate frame
+                    self.ckp.log[-1, idx_frame, idx_data] += utility.calc_psnr(
+                        fakeTarget, tseq, self.args.rgb_range, dataset=d
+                    )
+                    if self.args.save_gt:
+                        save_list['Noise'] = nseq ## t noised frame
+                        save_list['Target'] = tseq ## t target frame
+                        #save_list.extend([nseq, tseq])
 
-                fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
+                    if self.args.save_of:
+                        ## optical-flow
+                        t1, t2 = self.model.model.get_optical_input().chunk(2, dim=1)
+                        flowmap = self.model.model.get_opticalflow_map()
+                        save_list['flow'] = utility.vis_opticalflow(flowmap) ## t-1 with t
+                        save_list['source'] = t1 ## pre-denoised t-1 frame noise input
+                        save_list['noise-warped'] = utility.warpfunc(t1, flowmap) ## t-1 noised warped
+                        save_list['FTarget'] = t2 ## pre-denoised noise input
+                        prest_warped = self.model.model.get_warpresult()
+                        save_list['prest-warped'] = utility.quantize(prest_warped, self.args.rgb_range) ## t-1 estimated warped
 
-                save_list['Est'] = fakeTarget
-                self.ckp.log[-1, idx_data] += utility.calc_psnr(
-                    fakeTarget, tseq, self.args.rgb_range, dataset=d
-                )
-                if self.args.save_gt:
-                    save_list['Noise'] = nseq
-                    save_list['Target'] = tseq
-                    #save_list.extend([nseq, tseq])
+                    if self.args.save_results:
+                        self.ckp.save_results(d, filename[0], save_list, idx_frame)
 
-                if self.args.save_results:
-                    self.ckp.save_results(d, filename[0], save_list)
-
-            self.ckp.log[-1, idx_data] /= len(d)
-            best = self.ckp.log.max(0)
+            self.ckp.log[-1, : , idx_data] /= len(d)
+            self.ckp.write_log('{}\'th epoch, PSNR via frame: {}'.format(epoch, self.ckp.log[-1, :, idx_data]))
+            epoch_best, epoch_idx = self.ckp.log.max(0)
+            best, frame_idx = epoch_best.max(0)
+            best_frame_idx = frame_idx[idx_data]
+            best_epoch_idx = epoch_idx[best_frame_idx, idx_data]
             self.ckp.write_log(
-                '[{}]\tPSNR: {:.3f} (Best: {:.3f} @epoch {})'.format(
+                '[{}]\t PSNR: {:.3f} (Best: {:.3f} @frame {} @epoch {})'.format(
                     d.dataset.name,
-                    self.ckp.log[-1, idx_data],
-                    best[0][idx_data],
-                    best[1][idx_data] + 1
+                    self.ckp.log[-1, :, idx_data].mean(),
+                    best[0],
+                    best_frame_idx + 1,
+                    best_epoch_idx + 1
                 )
             )
 
@@ -185,7 +227,8 @@ class Trainer():
             self.ckp.end_background()
 
         if not self.args.test_only:
-            self.ckp.save(self, epoch, is_best=(best[1][0] + 1 == epoch))
+            self.ckp.save(self, epoch, is_best=(best_epoch_idx + 1 == epoch))
+            self.ckp.plot_psnr(self.args.n_frames, dimension = 0, name = 'idx_frame')
 
         self.ckp.write_log(
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
@@ -197,7 +240,10 @@ class Trainer():
         device = torch.device('cpu' if self.args.cpu else 'cuda')
         def _prepare(tensor):
             if self.args.precision == 'half': tensor = tensor.half()
-            return tensor.to(device)
+            tensor = tensor.to(device)
+            return tensor
+
+
 
         return [_prepare(a) for a in args]
 
