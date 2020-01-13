@@ -12,15 +12,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Loss(nn.modules.loss._Loss):
-    def __init__(self, args, ckp, ls=None):
+    def __init__(self, args, ckp, ls=None, task=None):
         super(Loss, self).__init__()
         print('Preparing loss function:')
 
-        if ls is None:
-            ls = args.loss
-            self.name = 'denoise'
-        else:
-            self.name = 'optical-flow'
+        assert task is not None
+        assert ls is not None
+
+        self.name = task
 
         self.n_frames = args.n_frames
         self.n_GPUs = args.n_GPUs
@@ -104,6 +103,7 @@ class Loss(nn.modules.loss._Loss):
         loss_sum = sum(losses)
         if len(self.loss) > 1:
             self.log[-1, -1, idx] += loss_sum.item()
+        #print(self.log)
         return loss_sum
 
     def batch_sum(self):

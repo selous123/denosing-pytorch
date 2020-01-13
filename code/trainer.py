@@ -65,8 +65,9 @@ class Trainer():
             timer_model.tic()
 
             self.optimizer.zero_grad()
-            self.model.init_hidden()
-            loss = 0
+            self.model.model.init_hidden()
+            loss_d = 0
+            loss_f = 0
             loss_input_data_flow = {}
             loss_input_data_denoise = {}
             for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
@@ -78,6 +79,8 @@ class Trainer():
                 loss_input_data_denoise['est'] = fakeTarget
                 loss_input_data_denoise['target'] = tseq
                 ld = self.loss[0](loss_input_data_denoise, idx_frame)
+
+                loss_d += ld
                 #exit(0)
 
                 ## loss for optical-flow
@@ -89,38 +92,40 @@ class Trainer():
                 ## Get The pre-denoised output for calculate
                 ## The Loss for optical-flow task
                 ## t1: for t-1'th frame and t2: for t'th frame
-                t1, t2 = self.model.model.get_optical_input().chunk(2, dim=1)
-                flowmaps = self.model.model.get_opticalflow_map()
-
                 lf = 0
-                if type(flowmaps) in [tuple, list]:
-                    weights = [0.005, 0.01, 0.02, 0.08, 0.32]
-                    #weights = [1.0, 1.0, 1.0, 1.0, 1.0]
-                    assert len(flowmaps) == len(weights)
-                    for flowmap, weight in zip(flowmaps, weights):
-                    ## warped result
-                        warped_image = utility.warpfunc(t1, flowmap)
-                        #print(flowmap.max(), flowmap.min())
-                        ## L1 (est, target)
-                        loss_input_data_flow['est'] = warped_image
-                        loss_input_data_flow['target'] = t2
-                        ##TVL1(flowmap)
-                        loss_input_data_flow['flowmap'] = flowmap
+                if idx_frame != 0:
+                    t1, t2 = self.model.model.get_optical_input().chunk(2, dim=1)
+                    flowmaps = self.model.model.get_opticalflow_map()
+                    if type(flowmaps) in [tuple, list]:
+                        weights = [0.005, 0.01, 0.02, 0.08, 0.32]
+                        #weights = [1.0, 1.0, 1.0, 1.0, 1.0]
+                        assert len(flowmaps) == len(weights)
+                        for flowmap, weight in zip(flowmaps, weights):
+                        ## warped result
+                            warped_image = utility.warpfunc(t1, flowmap)
+                            #print(flowmap.max(), flowmap.min())
+                            ## L1 (est, target)
+                            loss_input_data_flow['est'] = warped_image
+                            loss_input_data_flow['target'] = t2
+                            ##TVL1(flowmap)
+                            loss_input_data_flow['flowmap'] = flowmap
 
-                        #l_data += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
-                        lf += weight * self.loss[1](loss_input_data_flow, idx_frame)
+                            #l_data += weight * self.loss[0](warped_image, tseqs[idx_frame+1], idx_frame)
+                            lf += weight * self.loss[1](loss_input_data_flow, idx_frame)
 
-                else:
-                    warped_image = utility.warpfunc(t1, flowmaps)
-                    ## loss for optical-flow
-                    lf = self.loss[1](warped_image, t2, idx_frame)
-                # print("l0:", self.loss[0].display_loss(batch))
-                # print("l1:", self.loss[1].display_loss(batch))
-                loss += (ld + lf)
+                    else:
+                        warped_image = utility.warpfunc(t1, flowmaps)
+                        ## loss for optical-flow
+                        lf = self.loss[1](warped_image, t2, idx_frame)
+                    # print("l0:", self.loss[0].display_loss(batch))
+                    # print("l1:", self.loss[1].display_loss(batch))
+                loss_f += lf
             ## Loss STEP 3
             [l.batch_sum() for l in self.loss]
             #exit(0)
-            loss /= len(nseqs)
+            loss_d = loss_d / len(nseqs)
+            loss = loss_d + loss_f
+            #loss /= len(nseqs)
             loss.backward()
             if self.args.gclip > 0:
                 utils.clip_grad_value_(
@@ -133,12 +138,13 @@ class Trainer():
 
             ## Loss STEP 4
             if (batch + 1) % self.args.print_every == 0:
-                self.ckp.write_log('[{}/{}]\t{}\t{}\t{}\t{:.1f}+{:.1f}s'.format(
+                self.ckp.write_log('[{}/{}]\t{}\t{}\t{}\t{}\t{:.1f}+{:.1f}s'.format(
                     (batch + 1) * self.args.batch_size,
                     len(self.loader_train.dataset),
                     self.loss[0].display_loss(batch),
                     self.loss[1].display_loss(batch),
-                    loss,
+                    loss_d,
+                    loss_f,
                     timer_model.release(),
                     timer_data.release()))
 
@@ -171,7 +177,7 @@ class Trainer():
                 filename = [fname[-10:] for fname in pathname]
                 nseqs, tseqs = self.prepare(nseqs, tseqs)
 
-                self.model.init_hidden()
+                self.model.model.init_hidden()
                 #save_list = []
                 save_list = {}
                 for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
@@ -228,7 +234,7 @@ class Trainer():
 
         if not self.args.test_only:
             self.ckp.save(self, epoch, is_best=(best_epoch_idx + 1 == epoch))
-            self.ckp.plot_psnr(self.args.n_frames, dimension = 0, name = 'idx_frame')
+            self.ckp.plot_psnr(self.args.n_frames, mean = False, dimension = 0, name = 'idx_frame')
 
         self.ckp.write_log(
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True

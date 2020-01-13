@@ -17,7 +17,8 @@ class Model(nn.Module):
         self.device = torch.device('cpu' if args.cpu else 'cuda')
         self.n_GPUs = args.n_GPUs
         self.save_models = args.save_models
-
+        self.name = args.model.lower()
+        
         module = import_module('model.' + args.model.lower())
         self.model = module.make_model(args).to(self.device)
         if args.precision == 'half':
@@ -31,8 +32,6 @@ class Model(nn.Module):
         )
         print(self.model, file=ckp.log_file)
 
-    def init_hidden(self):
-        self.model.init_hidden()
 
     def forward(self, x,):
 
