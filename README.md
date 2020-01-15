@@ -166,10 +166,12 @@ Refined plan (On Training):
 2. Tuning the trade-off parameter $\lambda$ in Loss Function. TV Loss is instrumental to constrain the smoothness property of flow-map.
 
 
+[Video denoised result  of model FRVD with optical flow]("show/frvdwof/frvdwof_presentation.mp4")
+
 ## 5. To do list...
 5.1 Data Loader for vimeo test dataset...
 
-5.2 Integrate the refined optical-flow model into FRVD(Updated 3). 
+5.2 Integrate the refined optical-flow model into FRVD(Updated 3).
 
 
 ## 6. Licence
