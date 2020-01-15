@@ -53,11 +53,14 @@ class Tester():
                     ## fakeTarget for t'th denoised frame
                     ## fakeNoise for (t-1)'th noised frame alignmented
                     ## after optical-flow
-                    fakeTarget, fakeNoise = self.model(nseq)
+                    fakeTarget = self.model(nseq)
+
+                    if type(fakeTarget) in [list, tuple]:
+                        fakeTarget = fakeTarget[0]
 
                     fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
 
-                    if self.args.save_optical:
+                    if self.args.save_of:
                         flow = self.model.model.get_opticalflow_map()
                         save_list['flow'] = utility.vis_opticalflow(flow)
                         save_list['warpresult'] = self.model.model.get_warpresult()
