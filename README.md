@@ -173,7 +173,7 @@ We integratd the refined flownet module into denoising module, as illustrated in
 
 We are able to get time-continuity PSNR values via frame index. We have also formulated the test results into a video file for a more clear understanding.
 
-[Video denoised result  of model FRVD with optical flow](show/frvdwof/frvdwof_presentation.mp4)
+[Video denoised result  of model FRVD with optical flow](show/frvdwof)
 
 <p align="center">
 <img src="show/frvdwof/frame_049.png">
