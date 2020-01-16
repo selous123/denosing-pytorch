@@ -6,7 +6,7 @@ from torchvision.models import vgg16
 import sys
 sys.path.append('..')
 from option import args
-from .flow import flownets
+#from .flow import flownets
 
 from model import common
 ## Frame-Recurrent Video Denosing without any image alignment
@@ -106,7 +106,7 @@ class FRVD(nn.Module):
                 height = self.args.test_patch_size
 
 
-        self.lastNoiseImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
+        #self.lastNoiseImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
         #print("shape is :", self.lastNoiseImg.shape)
         self.EstTargetImg = torch.zeros([self.batch_size, 3, height, width]).to(self.device)
         # height_gap = 2 / (self.height * self.SRFactor - 1)
@@ -120,12 +120,12 @@ class FRVD(nn.Module):
         dnInput = torch.cat((input, self.EstTargetImg), dim=1)
         #print(dnInput.shape)
         estImg = self.dnet(dnInput)
-        self.lastNoiseImg = input
+        #self.lastNoiseImg = input
         #print(self.lastNoiseImg.shape)
         self.EstTargetImg = estImg
         #print(self.EstTargetImg.shape)
         self.EstTargetImg.retain_grad()
-        return self.EstTargetImg, self.lastNoiseImg
+        return self.EstTargetImg#, self.lastNoiseImg
 
 
 class TestFRVD(unittest.TestCase):
@@ -140,7 +140,7 @@ class TestFRVD(unittest.TestCase):
 
     def testFRVD(self):
         block = FRVD(args)
-        block.eval()
+        #block.eval()
         if block.training:
             H = args.patch_size
             W = args.patch_size
@@ -151,11 +151,11 @@ class TestFRVD(unittest.TestCase):
             b = args.test_batch_size
         input = torch.rand(7, b, 3, H, W).to(torch.device("cuda"))
         #"cuda:0" if torch.cuda.is_available() else
-        block.init_hidden()
+        #block.init_hidden()
         for batch_frames in input:
-            output1, output2 = block(batch_frames)
+            output1 = block(batch_frames)
             self.assertEqual(output1.shape, torch.empty(b, 3, H, W).shape)
-            self.assertEqual(output2.shape, torch.empty(b, 3, H, W).shape)
+            #self.assertEqual(output2.shape, torch.empty(b, 3, H, W).shape)
 
 
 if __name__ == '__main__':

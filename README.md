@@ -46,11 +46,12 @@ We have adopted mse loss for training now.
 
 ### 2.3 Training Command
 ```
-python main.py --model frvdwof --n_frames 7 --model_label 2  --loss_denoise "4.0*L1" --loss_flow "4.0*L1+3.0*TVL1" --save_result --save_gt --save_of --save "frvdwof-v0.1" --data_range "1-800/801-824"
+python main.py --model frvdwof --n_frames 7 --model_label 2  --loss_denoise "1.0*MSE" --loss_flow "4.0*L1+3.0*TVL1" --save_result --save_gt --save_of --save "frvdwof-v0.1" --data_range "1-800/801-824"
 ```
+More command can be found in command.txt, all commands are tested correctly in the latest code repo.
 
 ## 3. Result Presentation
-1.denoising results & optical flow results
+3.1. denoising results & optical flow results
 
 <p align="center">
     <img src="show/frvd_test/00001_0266_frame0_Noise.png" Title = "Noise" width="150">
@@ -70,14 +71,14 @@ python main.py --model frvdwof --n_frames 7 --model_label 2  --loss_denoise "4.0
 </p>
 <p align="center">Figure 2. Denoising result on Frame 1, [Noise, Target, Flow, Denoise, Warped-previous-frame]</p>
 
-2.training psnr via epochs
+3.2. training psnr via epochs
 
 <p align="center">
 <img src="show/frvd_test/training_psnr.png"></p>
 <p align="center">
 Figure 3. Validation PSNR via epochs during training processing.</p>
 
-3.testing psnr via frame
+3.3. testing psnr via frame
 
 <p align="center">
 <img src="show/frvd_test/psnr_frame.png">
@@ -135,6 +136,7 @@ Figure 7. Loss function.</p>
 
 4.3 Results Presentation
 
+a) On Clean Dataset Setting.
 <p align="center">
 <img src="show/of/psnr.png">
 </p>
@@ -147,6 +149,7 @@ Figure 8.1. PSNR of validation set on clean data.</p>
 <p align="center">
 Figure 8.2. aligned results of validation set on clean data.</p>
 
+b) On Noised Dataset Setting
 <p align="center">
 <img src="show/of/psnr_noise.png">
 </p>
@@ -165,14 +168,21 @@ Refined plan (On Training):
 1. Integrating denoising module into FlowNetS-module.
 2. Tuning the trade-off parameter $\lambda$ in Loss Function. TV Loss is instrumental to constrain the smoothness property of flow-map.
 
+## Updated 3 Again
+We integratd the refined flownet module into denoising module, as illustrated in Figure 1.
 
-[Video denoised result  of model FRVD with optical flow]("show/frvdwof/frvdwof_presentation.mp4")
+We are able to get time-continuity PSNR values via frame index. We have also formulated the test results into a video file for a more clear understanding.
 
-## 5. To do list...
-5.1 Data Loader for vimeo test dataset...
+[Video denoised result  of model FRVD with optical flow](show/frvdwof/frvdwof_presentation.mp4)
 
-5.2 Integrate the refined optical-flow model into FRVD(Updated 3).
+<p align="center">
+<img src="show/frvdwof/frame_049.png">
+</p>
+<p align="center">
+Figure 10. Example of Video Frame .</p>
 
+## 5. Problems
+The Mean PSNR of FRVD with optical flow (35.739) is slightly inferior to that of FRVD (36.286).
 
 ## 6. Licence
 This project is licensed under the GNU General Public License v3.0. The terms and conditions can be found in the LICENSE files.

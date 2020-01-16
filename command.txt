@@ -1,59 +1,49 @@
 # For Denoising
-##For Training:
 ```
-python main.py --loss '1.0*MSE' --loss_flow '1.0*MSE' --save_gt --save_results
+##For Training:
 ### frvd with optical-flow task
 python main.py --model frvdwof --n_frames 7 --model_label 2  --loss_denoise "4.0*L1" --loss_flow "4.0*L1+3.0*TVL1" --save_result --save_gt --save_of --save "frvdwof-v0.1" --data_range "1-800/801-824"
-```
-
 ## For Testing:
+python main.py --test_only --save_gt --save_results --save_of  --model frvdwof --n_frames 7 --model_label 2 --save "frvdwof-v0.1-test" --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvdwof-v0.1/model/model_latest.pt  --data_range '901-930' --test_patch_size -1
 ```
-python main.py --test_only --save_gt --save_results --save_of  --model frvd --model_label 2 --save "frvdwof-v0.1-test" --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvdwof-v0.1/model/model_latest.pt  --data_range '901-930' --test_patch_size -1
 
-# For optical-flow
+# For optical-flow only
+```
 ## For Training
-```
-python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.2-target" --data_range "1-800/801-824"
-python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.2-target" --data_range "1-800/801-824"
-python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "1.0*L1" --loss_freg '1.0*TVL1' --save_results --save_gt --save "fnet-v0.4-target" --data_range "1-800/801-824"
-python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+1.0*TVL1" --save_results --save_gt --save "test-loss" --data_range "1-800/801-824"
-python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+1.0*TVL1" --save_results --save_gt --save "fnet-v0.5-noise" --tn --data_range "1-800/801-824"
 python main.py --model flow.flownets --n_frames 6 --model_label 0  --loss_flow "4.0*L1+4.0*TVL1" --save_results --save_gt --save "fnet-v0.6-pre_dnoise" --tn  --data_range "1-800/801-824"
-```
-
 ## For Testing
-```
-python main.py --model flow.flownets --model_label 0 --save_results --save_gt --save "fnet-v0.1-test-target"  --data_range "901-930" --test_only --pre_train "/home/lrh/git/FRVD-pytorch/experiment/fnet-v0.1-target/model/model_latest.pt" --test_patch_size -1
+python main.py --model flow.flownets --n_frames 6 --model_label 0 --save_results --save_gt --save "fnet-v0.6-test"  --data_range "901-930" --test_only --pre_train "/home/lrh/git/FRVD-pytorch/experiment/fnet-v0.6-pre_dnoise/model/model_best.pt" --test_patch_size -1
 ```
 
 # For FR only
+```
 ## For Training
-```
-python main.py --loss '1.0*MSE' --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2"  --data_range '1-800/801-824'
-```
-
+python main.py --loss_denoise '1.0*MSE' --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2"  --data_range '1-800/801-824'
 ## For Testing
 python main.py --test_only --save_gt --save_results  --model frvd --model_label 1 --save "frvd-v0.2-test" --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvd-v0.2/model/model_latest.pt  --data_range '901-930' --test_patch_size -1
 ```
-
-
 
 For test with Vimeo dataset
 ```
 ## optical-flow
 python flowtest.py --n_frames 657 --pre_train /home/lrh/git/FRVD-pytorch/experiment/fnet-v0.4-target/model/model_latest.pt --save_results --save_gt --save 'fnet-v0.4-vimeo-test' --data_test vimeo
-
 ## denoise only
 python test.py --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvd-v0.2/model/model_best.pt
-
 ## FRVD w/ optical-flow
 python test.py --dir_data /store/dataset/vdenoising/vimeo/v1/ --model frvdwof --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvdwof-v0.1/model/model_best.pt  --test_patch_size -1 --save_of --save_gt
 ```
 
 
-
-
 For Test with no target dataset
 ```
 python test_no_target.py --dir_data /store/dataset/vdenoising/vimeo/v1/ --model frvdwof --pre_train /home/lrh/git/FRVD-pytorch/experiment/frvdwof-v0.1/model/model_best.pt  --test_patch_size -1
+```
+
+
+For splice test results to generate video frame
+This Function will generate SPICED directory in the des_dir
+```
+## --model for image path
+python test.py --dir_data /store/dataset/vdenoising/vimeo/v1/ --model frvdwof
+python test.py --dir_data /home/lrh/git/FRVD-pytorch/experiment/frvdwof-v0.2-test/results-ToFlow/
 ```

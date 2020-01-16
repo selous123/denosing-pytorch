@@ -267,6 +267,62 @@ def inference():
 
     print('Done!!')
 
+
+def spliced_vimeo_dataset():
+    pointpath = os.path.join(args.dir_data, 'point.txt')
+    f = open(pointpath)
+    points = [int(line) for line in f.readlines()]
+
+
+    suffixes = ["est", "noise", "zflowmap", "target"]
+    desdir = os.path.join(args.dir_data, 'denoised', args.model)
+    #desdir = '/home/lrh/git/FRVD-pytorch/experiment/frvdwof-v0.2-test/results-ToFlow/'
+    filepathseqs = []
+
+    for suffix in suffixes:
+        filepathes = glob.glob(os.path.join(desdir, '*' + suffix + '.png'))
+        filepathes.sort()
+        filepathseqs.append(filepathes)
+
+
+    img_seqs = []
+    for index in range(len(filepathseqs[0])):
+        imgs = []
+        for jndex in range(len(filepathseqs)):
+            imgs.append(imageio.imread(filepathseqs[jndex][index]))
+        img_seqs.append(imgs)
+
+    des_root = os.path.join(desdir, 'spliced')
+    start_point = 0
+    for point in points:
+        #print(point)
+        splice_save_image(img_seqs[start_point:point], des_root, startid=start_point)
+        start_point = point
+
+def spliced_validation_dataset():
+    suffixes = ["Est", "Noise", "flow", "Target"]
+    #desdir = '/home/lrh/git/FRVD-pytorch/experiment/frvdwof-v0.2-test/results-ToFlow/'
+    desdir = args.dir_data
+    filepathseqs = []
+
+    for suffix in suffixes:
+        filepathes = glob.glob(os.path.join(desdir, '*' + suffix + '.png'))
+        filepathes.sort()
+        filepathseqs.append(filepathes)
+
+    num_seqs = len(filepathseqs[0]) // 7
+
+    img_seqs = []
+    for index in range(len(filepathseqs[0])):
+        imgs = []
+        for jndex in range(len(filepathseqs)):
+            imgs.append(imageio.imread(filepathseqs[jndex][index]))
+        img_seqs.append(imgs)
+
+    des_root = os.path.join(desdir, 'spliced')
+    for index in range(num_seqs):
+        splice_save_image(img_seqs[index * 7 : (index + 1) * 7], des_root, startid=index * 7)
+
 from matplotlib import pyplot as plt
 if __name__=='__main__':
 
@@ -274,33 +330,9 @@ if __name__=='__main__':
     if False:
         inference()
     else:
-        pointpath = os.path.join(args.dir_data, 'point.txt')
-        f = open(pointpath)
-        points = [int(line) for line in f.readlines()]
+        #spliced_vimeo_dataset()
+        spliced_validation_dataset()
 
-
-        suffixes = ["est", "noise", "zflowmap", "target"]
-        desdir = os.path.join(args.dir_data, 'denoised', args.model)
-        filepathseqs = []
-
-        for suffix in suffixes:
-            filepathes = glob.glob(os.path.join(desdir, '*' + suffix + '.png'))
-            filepathes.sort()
-            filepathseqs.append(filepathes)
-
-
-        img_seqs = []
-        for index in range(len(filepathseqs[0])):
-            imgs = []
-            for jndex in range(len(filepathseqs)):
-                imgs.append(imageio.imread(filepathseqs[jndex][index]))
-            img_seqs.append(imgs)
-
-        des_root = os.path.join(desdir, 'spliced')
-        start_point = 0
-        for point in points:
-            splice_save_image(img_seqs[start_point:point], des_root, startid=start_point)
-            start_point = point
 
     # length = 3
     #

@@ -42,15 +42,15 @@ class FRTrainer(trainer.Trainer):
             timer_model.tic()
 
             self.optimizer.zero_grad()
-            self.model.init_hidden()
+            self.model.model.init_hidden()
             loss = 0
             loss_input_data = {}
-            
+
             for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
                 ## fakeTarget for t'th denoised frame
                 ## fakeNoise for (t-1)'th noised frame alignmented
                 ## after optical-flow
-                fakeTarget, _ = self.model(nseq)
+                fakeTarget = self.model(nseq)
 
                 loss_input_data['est'] = fakeTarget
                 loss_input_data['target'] = tseq
@@ -120,14 +120,14 @@ class FRTrainer(trainer.Trainer):
                 filename = [fname[-10:] for fname in pathname]
                 nseqs, tseqs = self.prepare(nseqs, tseqs)
 
-                self.model.init_hidden()
+                self.model.model.init_hidden()
                 #save_list = []
                 save_list = {}
                 for idx_frame, (nseq, tseq) in enumerate(zip(nseqs, tseqs)):
                     ## fakeTarget for t'th denoised frame
                     ## fakeNoise for (t-1)'th noised frame alignmented
                     ## after optical-flow
-                    fakeTarget, fakeNoise = self.model(nseq)
+                    fakeTarget = self.model(nseq)
 
 
                     fakeTarget = utility.quantize(fakeTarget, self.args.rgb_range)
@@ -165,7 +165,7 @@ class FRTrainer(trainer.Trainer):
 
         if self.args.save_results:
             self.ckp.end_background()
-            ## plot PNSR via frame index.
+            ## plot PNSR via frame index.s
 
         if not self.args.test_only:
             self.ckp.save(self, epoch, is_best=(best_epoch_idx + 1 == epoch))
