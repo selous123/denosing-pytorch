@@ -1,10 +1,11 @@
 import GPUtil
 import time
 import os
+import sys
 
 commands = []
 
-command1 = 'python main.py --model frvd --n_frames 7 --model_label 1--loss_denoise "1.0*MSE" --save_gt --save_results   --save "frvd-v1.0"  --data_range "1-800/801-824" --epoch 100'
+command1 = 'python main.py --model frvd --n_frames 7 --model_label 1 --loss_denoise "1.0*MSE" --save_gt --save_results   --save "frvd-v1.0"  --data_range "1-800/801-824" --epoch 100'
 commands.append(command1)
 command2 = 'python main.py --model frvdwof --n_frames 7 --model_label 2  --loss_denoise "1.0*MSE" --loss_flow "1.0*L1+1.25*TVL1" --save_result --save_gt --save_of --save "frvdwof-v0.3" --data_range "1-800/801-824" --epoch 100'
 commands.append(command2)
@@ -17,21 +18,33 @@ commands.append(command5)
 
 command_idx = 0
 
+
+
 while(True):
     try:
         DEVICE_ID_LIST = GPUtil.getFirstAvailable()
-        print(command[command_idx])
-        os.system(command)
+        command = commands[command_idx]
+        print(command)
+        exec_status = os.system(command)
+        if exec_status:
+            raise OSError("System Invoke Error!")
         command_idx += 1
-        if command_idx >= len(commands):
-            break
-    except:
+
+    except RuntimeError:
         print ('=================GPU Information====================')
         print ("Executing Command", command_idx)
         print ("Waiting GPU Free...")
         print (time.strftime("%F") + ' ' +  time.strftime("%T"))
         print ('====================================================')
         time.sleep(1 * 60 * 30)
+
+    except IndexError:
+        break
+
+    except:
+        print("========================================here, or not=================")
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
 
 
 print('Done!!')
